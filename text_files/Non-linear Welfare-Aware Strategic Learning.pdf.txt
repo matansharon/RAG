@@ -1,0 +1,1085 @@
+Non-linear Welfare-Aware Strategic Learning
+Tian Xie1and Xueru Zhang1
+{xie.1379, zhang.12807}@osu.edu
+1the Ohio State University
+April, 2024
+Abstract
+This paper studies algorithmic decision-making in the presence of strategic individual be-
+haviors, where an ML model is used to make decisions about human agents and the latter can
+adapt their behavior strategically to improve their future data. Existing results on strategic
+learning have largely focused on the linearsetting where agents with linear labeling function
+best respond to a (noisy) linear decision policy. Instead, this work focuses on general non-linear
+settings where agents respond to the decision policy with only "local information" of the policy.
+Moreover, we simultaneously consider objectives of maximizing decision-maker welfare (model
+prediction accuracy), social welfare (agent improvement caused by strategic behaviors), and
+agent welfare (the extent that ML underestimates the agents). We first generalize the agent
+best response model in previous works to the non-linear setting, then reveal the compatibility of
+welfare objectives. We show the three welfare can attain the optimum simultaneously only under
+restrictive conditions which are challenging to achieve in non-linear settings. The theoretical
+results imply that existing works solely maximizing the welfare of a subset of parties inevitably
+diminish the welfare of the others. We thus claim the necessity of balancing the welfare of each
+party in non-linear settings and propose an irreducible optimization algorithm suitable for general
+strategic learning. Experiments on synthetic and real data validate the proposed algorithm.
+1 Introduction
+When machine learning (ML) models are used to automate decisions about human agents (e.g., in
+lending, hiring, and college admissions), they often have the power to affect agent behavior and
+reshape the population distribution. With the (partial) information of the decision policy, agents can
+change their data strategically to receive favorable outcomes, e.g., they may exert efforts to genuinely
+improve their labels or game the ML models by manipulating their features without changing the
+labels. This phenomenon has motivated an emerging line of work on Strategic Classification (Hardt
+et al., 2016), which explicitly takes the agents’ strategic behaviors into account when learning ML
+models.
+One challenge in strategic classification is to model the interactions between agents and the ML
+decision-maker, as well as understand the impacts they each have on the other. As the inputs
+of the decision system, agents inevitably affect the utility of the decision-maker. Meanwhile, the
+deployed decisions can further influence agents’ future data and induce societal impacts. Thus, to
+facilitate socially responsible algorithmic decision-making, we need to consider the welfare of all
+1arXiv:2405.01810v1  [cs.AI]  3 May 2024parties when learning the decision system, including the welfare of the decision-maker, agent, and
+society. Specifically, the decision-maker typically cares more about assigning correct labels to agents
+when making decisions, while society will be better off if the decision policy can incentivize agents to
+improve their actual states (labels). For the agents, it is unrealistic to assign each of them a positive
+decision, but it is reasonable for agents to expect a "just" decision that does not underestimate their
+actual states.
+However, most existing works on strategic classification solely consider the welfare of one party. For
+example, Dong et al. (2018); Braverman and Garg (2020); Jagadeesan et al. (2021); Sundaram et al.
+(2021); Zhang et al. (2022); Eilat et al. (2022) only focus on decision-maker welfare by designing
+accurate classifiers robust to strategic manipulation. Kleinberg and Raghavan (2020); Harris et al.
+(2021); Ahmadi et al. (2022a) solely consider maximizing social welfare by designing an optimal
+policy to incentivize the maximum improvement of agents. To the best of our knowledge, only a
+few works consider both decision-maker welfare andsocial welfare (Bechavod et al., 2022; Barsotti
+et al., 2022). Among them, Bechavod et al. (2022) initiate a theoretical study to understand the
+relationship between the two welfare, where they identify a sufficient condition under which the
+decision-maker welfare andsocial welfare can be optimized at the same time. However, this paper
+still focuses on incentivizing agent improvement to maximize social welfare .
+Moreover, most prior works limit the scope of analysis to linear settings by assuming both the
+agent labeling function and the ML decision rules are linear (Dong et al., 2018; Chen et al., 2020b;
+Ahmadi et al., 2021; Horowitz and Rosenfeld, 2023). This is unrealistic in real applications when
+the relationship between features and labels is highly intricate and non-linear. Meanwhile, previous
+works typically modeled strategic behaviors as "(noisy) best responses" to the decision policy (Hardt
+et al., 2016; Jagadeesan et al., 2021; Dong et al., 2018; Chen et al., 2020b; Ahmadi et al., 2021;
+Horowitz and Rosenfeld, 2023), which is not practical when the decision policy is highly complex
+and agents’ knowledge about the policy (e.g., a neural network) is far from complete. It turns out
+that the existing theoretical results and methods proposed under linear settings where agents "best
+respond" can easily be violated in non-linear settings. Thus, there remain gaps and challenges in
+developing a comprehensive framework for strategic learning under general non-linear settings.
+To tackle the limitations in prior works, we study the welfare of all parties in strategic learning under
+general non-linear settings where both the ground-truth labeling function and the decision policies
+are complex and possibly non-linear. Importantly, we develop a generalized agent response model
+that allows agents to respond to policy only based on local information/knowledge they have about
+the policy. Under the proposed response model, we simultaneously consider: 1) decision-maker
+welfarethat measures the prediction accuracy of ML policy; 2) social welfare that indicates the level
+of agent improvement; 3) agent welfare that quantifies the extent to which the policy under-estimates
+the agent qualifications.
+Under general non-linear settings and the proposed agent response model, we first revisit the
+theoretical results in Bechavod et al. (2022) and show that those results can easily be violated under
+more complex settings. We then explore the relationships between the objectives of maximizing
+decision-maker, social, and agent welfare. The results show that the welfare of different parties can
+only be aligned under rigorous conditions depending on the ground-truth labeling function, agents’
+knowledge about the decision policy, and the realizability (i.e., whether the hypothesis class of the
+decision policy includes the ground-truth labeling function). It implies that existing works that
+2solely maximize the welfare of a subset of parties inevitably diminish the welfare of the others. We
+thus propose an algorithm to balance the welfare of all parties.
+The rest of the paper is organized as follows. After briefly reviewing the related work in Sec. 2, we
+formulate a general strategic learning setting in Sec. 3, where the agent response and the welfare
+of the decision-maker, agent, and society are presented. In Sec. 4, we discuss how the existing
+theoretical results derived under linear settings are violated under non-linear settings and provide
+a comprehensive analysis of the decision-maker/agent/social welfare; we show all the conditions
+when they are guaranteed to be compatible in Thm. 4.1. This demonstrates the necessity of an
+"irreducible" optimization framework balancing the welfare of all parties, which we introduce in
+Sec. 5. Finally, in Sec. 6, we provide comprehensive experimental results to compare the proposed
+method with other benchmark algorithms on both synthetic and real datasets.
+2 Related Work
+Next, we briefly review the related work and discuss the differences with this paper.
+2.1 Strategic Learning
+Hardt et al. (2016) was the first to formulate strategic classification as a Stackelberg game where
+the decision-maker publishes a policy first following which agents best respond. A large line of
+subsequent research has focused on designing accurate classifiers robust to strategic behaviors. For
+example, Ben-Porat and Tennenholtz (2017); Chen et al. (2020a); Tang et al. (2021) designed robust
+linear regression predictors for strategic classification, while Dong et al. (2018) proposed an online
+learning algorithm for the problem. Levanon and Rosenfeld (2021) designed a protocol for the
+decision maker to learn agent best response when the decision policy is non-linear, but it assumes
+agents are perfectly aware of the complex classifiers deployed on them. Braverman and Garg (2020);
+Jagadeesan et al. (2021) relaxed the assumption that the best responses of agents are deterministic
+and studied how the decision policy is affected by randomness. Sundaram et al. (2021) provided
+theoretical results on PAC learning under the strategic setting, while Levanon and Rosenfeld (2022);
+Horowitz and Rosenfeld (2023) proposed a new loss function and algorithms for linear strategic
+classification. Miller et al. (2020); Shavit et al. (2020); Alon et al. (2020) focused on causal strategic
+learning where features are divided into "causal" and "non-causal" ones. However, all these works
+study strategic classification under linear settings and the primary goal is to maximize decision-maker
+welfare. In contrast, our work considers the welfare of not only the decision-maker but also the agent
+and society. Another line of work related to strategic learning is Performative Prediction (Perdomo
+et al., 2020) which is a model to capture general model-dependent distribution shifts. Although this
+framework can model strategic learning settings when the decision policy is strongly convex, it is
+highly abstract and hard to interpret when considering the welfare of different parties. We refer to
+Hardt and Mendler-Dünner (2023) as a comprehensive survey for Performative Prediction .
+2.2 Promote Social Welfare in Strategic Learning
+Although the definition of social welfare is sometimes subtle (Florio, 2014), social welfare is often
+regarded as the improvement of ground truth qualifications of agents in strategic learning settings
+and we need to consider how decision rules impact social welfare by shaping agent best response. A
+3rich line of works are proposed to design mechanisms to incentivize agents to improve(Liu et al.,
+2019; Rosenfeld et al., 2020; Shavit et al., 2020; Alon et al., 2020; Zhang et al., 2020; Chen et al.,
+2020a; Kleinberg and Raghavan, 2020; Bechavod et al., 2021; Ahmadi et al., 2022a,b; Raab and Liu,
+2021). The first prominent work was done by Kleinberg and Raghavan (2020), where they studied
+the conditions under which a linear mechanism exists to incentivize agents to improve their features
+instead of manipulating them. Specifically, they assume each agent has an effort budget and can
+choose to invest any amount of effort on either improvement or manipulation, and the mechanism
+aims to incentivize agents to invest all available efforts in improvement. Harris et al. (2021) designed
+a more advanced stateful mechanism considering the accumulative effects of improvement behaviors.
+They stated that improvement can accumulate over time and benefit agents in the long term, while
+manipulation cannot accumulate state to state. On the contrary, Estornell et al. (2021) considered
+using an audit mechanism to disincentivize manipulation which instead incentivize improvement.
+Besides mechanism design, Rosenfeld et al. (2020) studied incentivizing improvement in machine
+learning algorithms by adding a look-ahead regularization term to favor improvement. Chen et al.
+(2020a) divided the features into immutable, improvable, and manipulable features and explored
+linear classifiers that can prevent manipulation and encourage improvement. Jin et al. (2022) also
+focused on incentivizing improvement and proposed a subsidy mechanism to induce improvement
+actions and improve social well-being metrics. Bechavod et al. (2021) demonstrated the ability
+of strategic decision-makers to distinguish features influencing the label of individuals under an
+online setting. Ahmadi et al. (2022a) proposed a linear model where strategic manipulation and
+improvement are both present. Barsotti et al. (2022) conducted several empirical experiments when
+improvement and manipulation are possible and both actions incur a linear deterministic cost.
+The works closest to ours are Bechavod et al. (2022); Rosenfeld et al. (2020). Bechavod et al. (2022)
+provided analytical results of maximizing total improvement without harming anyone’s current
+qualification, but they assumed both the ground truth and the decision rule are linear. Rosenfeld
+et al. (2020) aimed to maximize accuracy while punishing the classifier only if it brings the negative
+externality in non-linear settings. However, solely punishing negative externality is far from ideal.
+Our work goes further by analyzing the relationships between the welfare of different parties and
+providing an optimization algorithm to balance the welfare.
+2.3 Welfare-Aware Machine Learning
+The early work on welfare-aware machine learning typically considers balancing social welfare and
+another competing objective such as fairness or profit. For example, Ensign et al. (2018) focused
+on long-term social welfare when myopically maximizing efficiency in criminal inspection practice
+creates a runaway feedback loop. Liu et al. (2020); Zhang et al. (2020); Guldogan et al. (2022)
+showed that instant fairness constraints may harm social welfare in the long run since the agent
+population may react to the classifier unexpectedly. Rolf et al. (2020) proposed a framework to
+analyze the Pareto-optimal policy balancing the prediction profit and a possibly competing welfare
+metric, but it assumed a simplified setting where the welfare of admitting any agent is constant,
+which is not the case in strategic learning.
+43 Problem Formulation
+Consider a population of strategic agents with features X= (X1, ..., X d),dom(X)⊂Rd, and label
+Y∈ {0,1}that indicates agent qualification for certain tasks (with “0" being unqualified and “1"
+qualified). Denote PXas the probability density function of X, and assume labeling function
+h(x) :=P(Y= 1|X=x)is continuous. The agents are subject to certain algorithmic decisions
+D(x) :Rd→ {0,1}(with “1" being positive and “0" negative), which are made by a decision-maker
+using a scoring function f(x) :=P(D(x) = 1|X=x). Unlike many studies in strategic classification
+that assume f∈ Fis a linear function, we allow Fto be non-linear. Moreover, it is possible that
+hypothesis class Fdoes not include h.
+3.1 Information level and generalized agent response
+We consider practical settings where the decisions deployed on agents have downstream effects and
+can reshape the agent’s future data. We assume agents are honest so that their future labels also
+change accordingly based on the fixed labeling function h(x). Given a function f, we define agent
+best response to fadhering to previous works on strategic learning (Hardt et al., 2016; Dong et al.,
+2018; Ahmadi et al., 2021) as follows.
+Definition 3.1 (Agent best response to a function) .Assume an agent with feature xwill incur cost
+c(x, x′)by moving her feature from xtox′. Then we say the agent best responds to function fif
+she changes her features from xtox∗= arg max x′{f(x′)−c(x, x′)}.
+It is worth noting that most existing works in strategic learning assume agents either best respond
+to the exact f(e.g., Hardt et al. (2016); Horowitz and Rosenfeld (2023); Dong et al. (2018); Ahmadi
+et al. (2021)) or noisy fwith additive noise (e.g., Levanon and Rosenfeld (2022); Jagadeesan et al.
+(2021)). However, the best response model in Def. 3.1 requires the agents to know the exact values
+off(x′)for all x′in the feature domain, which is a rather strong requirement and unlikely holds in
+practice, especially when policy f∈ Fis complex (e.g., logistic regression/neural networks). Instead,
+it may be more reasonable to assume agents only have "local information" about the policy f, i.e.,
+agents with features xonly have some information about fatxand they know how to improve their
+qualifications based on their current standings (Zhang et al., 2022; Raab and Liu, 2021). To formalize
+this, we define the agent’s information level and the resulting agent response in Def. 3.2.
+Definition 3.2 (Information level and agent response) .Agents with features xandinforma-
+tion level Kknow the gradient of fatx= [x1, ..., x d]up to the Kthorder (the agents know
+{∇f(x),∇2f(x), ...,∇Kf(x)}if all these gradients exist). Let Qf
+xbe the Taylor expansion of fatx
+up to the Kthorder, i.e.,
+Qf
+x(x′) =f(x) +dX
+i=1∂f
+∂xi(x)(x′
+i−xi) +1
+2!dX
+i=1dX
+j=1∂2f
+∂xi∂xj(x)(x′
+i−xi)(x′
+j−xj) +···(1)
++1
+K!dX
+i1=1···dX
+iK=1∂Kf
+∂xi1···∂xiK(x)(x′
+i1−xi1)···(x′
+iK−xiK)
+When fis only k < Ktimes differentiable, Qf
+xsimply uses all existing gradient information. Then
+the agents with information level Kwill respond to fby first estimating fusing Qf
+x, and then best
+responding to Qf
+x.
+5Def. 3.2 specifies the information level of agents and how they respond to the decision policy using
+all the information available at the locality. A lower level of Kis more interpretable in practice. For
+example, agents with information level K= 1use the first-order gradient of fto calculate a linear
+approximation, which means they only know the most effective direction to improve their current
+feature values. In contrast, agents with information level K= 2also know how this effective direction
+to improve will change (i.e., the second-order gradient that reveals the curvature of f).
+It is worth noting that the agent response under K= 1is also similar to Rosenfeld et al. (2020)
+where agents respond to the decision policy by moving toward the direction of the local first-order
+gradient, and Dean et al. (2023) where the agents aim to reduce their risk based on the available
+information at the current state. Moreover, Def. 3.2 can also be regarded as a generalization of the
+previous models where agents best respond to the exact decision policy under the linear setting.
+To illustrate this, assume the agents have an information level K≥1and the linear policy is
+f(x) =βTx, then they will estimate fusing Qf
+x(x′) =f(x) +∇f(x)·(x′−x) =βTx′, which is the
+same as f. However, for complex f, agents with information level Kmay no longer best respond to
+f. Prop. 3.3 illustrates the necessary and sufficient conditions for an agent to best respond.
+Proposition 3.3. An agent with information level Kcan best respond to fif and only if fis a
+polynomial with an order smaller than or equal to K.
+Prop. 3.3 shows that agents with only local information of policy can only best respond to f
+that is polynomial in feature vector X. In practical applications, foften does not belong to the
+polynomial function class (e.g., a neural network with Sigmoid activation may have infinite order
+gradients, and the one with Reluactivation may be a piece-wise function), making it unlikely for
+agents to best respond to f. Note that although Def. 3.2 specifies the agents to best respond to Qf
+x
+which is an approximation of actual policy fusing the "local information" at x, we also present a
+protocol in Alg. 2 to learn a more general response function x∗= ∆ ϕ(x, Ik(f, x))from population
+dynamics where ϕare learnable parameters and Ik(f, x)is all information available for agents with
+information level Kand feature x. This protocol can learn a rich set of responses when the agents
+have information level Kand use their information to respond to fstrategically.
+3.2 Welfare of different parties
+In this paper, we jointly consider the welfare of the decision-maker, agents, and society. Before
+exploring their relations, we first introduce the definition of each below.
+Decision-maker welfare. It is defined as the utility the decision maker immediately receives from
+the deployed decisions, without considering the downstream effects and agent response. Formally, for
+agents with data (x, y), we define the utility the decision-maker receives from making the decision
+D(x)asu(D(x), y). Then the decision-maker welfare is just the expected utility over the population,
+i.e.,
+DW(f) =Ex,y∼PXY[u(D(x), y)].
+When u(D(x), y) =1(D(x) =y), decision-maker welfare defined above reduces to the prediction accu-
+racyP(D(X) =Y). In Sec. 5 and 6, we focus on the special case with DW(f) =Ex,y∼PXY[1(D(x) =
+y)], but the results and analysis can be extended to other utility functions.
+6Social welfare. It evaluates the impact of the agent response on population qualifications. We
+consider two types of social welfare commonly studied in strategic learning: agent improvement and
+agent safety . Specifically, agent improvement is defined as:
+IMP(f) =Ex∼PX[h(x∗)−h(x)].
+It measures the increase in the overall population qualification caused by the agent best response.
+This notion has been theoretically and empirically studied under linear settings, e.g., (Kleinberg and
+Raghavan, 2020; Bechavod et al., 2022).
+For agent safety, we define it as:
+SF(f) =Ex∼PX
+min
+h(x∗)−h(x),0	
+.
+It illustrates whether there are agents suffering from deteriorating qualifications after they best
+respond. This notion has been studied in (Bechavod et al., 2022) and was interpreted as "do no
+harm" constraint, i.e., the deployed decisions should avoid adversely impacting agents. (Rosenfeld
+et al., 2020) has shown that agent safety can not be automatically guaranteed even under linear
+settings, and they proposed an algorithm to ensure safety in general settings. However, they did not
+consider agent improvement which we believe is an equally important measure of social welfare.
+Agent welfare. Previous literature rarely discussed the welfare of agents. The closest notion was
+social burden (Milli et al., 2019) defined as the minimum cost a positively-labeled user must pay to
+obtain a positive decision, where the authors assume agents can only “game" the decision-maker
+without improving their true qualifications. Since the agents can always strive to improve in our
+setting, their efforts are not necessarily a “burden". Thus, we propose a definition of agent welfare
+which measures the extent to which the agent qualification is under-estimated by the decision-maker,
+i.e.,
+AW(f) =Ex∼PX
+min
+f(x)−h(x),0	
+.
+When the policy underestimates the agent’s true potential ( f(x)< h(x)), the agent may be treated
+unfairly by the deployed decision (i.e., when a qualified agent gets a negative decision). We thus use
+AW(f)to measure agent welfare.
+4 Welfare Analysis
+This section explores the relationships between the decision-maker, social, and agent welfare intro-
+duced in Sec. 3. Among all prior works, (Bechavod et al., 2022) provides a theoretical analysis of
+socialanddecision-maker welfare under linear settings. In this section, we first revisit the results in
+(Bechavod et al., 2022) and show that they may not be applicable to non-linear settings. Then, we
+examine the relationships between three types of welfare under general settings.
+4.1 Beyond the linear setting
+Bechavod et al. (2022) considered linear settings when both the labeling function hand decision
+policy fare linear and revealed that decision-maker welfare (DW(f)) andsocial welfare (IMP(f))
+can attain the optimum simultaneously when the decision maker deploys f=hand agents best
+respond to f. However, under general non-linear settings, the compatibility of welfare is rarely
+7achieved and we present the necessary and sufficient conditions to guarantee the alignment of all
+welfare in Thm. 4.1.
+Theorem 4.1 (Alignment of all welfare) .Suppose agents have information level K, then decision-
+maker welfare, social welfare, and agent welfare can attain maximum simultaneously regardless of
+the feature distribution PXand cost function c(x, x′)if and only if his polynomial in Xwith order
+smaller than or equal to Kandh∈ F.
+Thm. 4.1 can be proved based on Prop. 3.3. Intuitively, decision-maker welfare andagent welfare
+are guaranteed to be maximized when fis accurate, while agents are only guaranteed to gain the
+largest improvement under an accurate fif they have a perfect understanding of f. When Thm. 4.1
+is not satisfied, the welfare of different parties is incompatible under the non-linear settings; we use
+two examples to illustrate this below.
+Figure 1: Illustration of the optimal linear policies and agent response when h(the blue curve) is
+quadratic and fis linear. There are four agents with features below 0.5(green solid circle) and one
+agent with the feature above 0.5(black solid circle). We observe that (i) the red line maximizes
+agent improvement IMP(f)but it isunsafeby only encouraging the green agents to improve while
+the black agent’s qualification deteriorates. The green/black arrows and the hollow circles show how
+agent response improves/worsens their qualifications; (ii) the black line aims to maximize DW(f)by
+running a least square regression with respect to ground truth h, which is different from the red line;
+(iii) Neither the red nor the black line maximizes the agent welfare AW(f); only predictors above
+h(x)(e.g., constant predictor f(x) = 1shown by green line) achieves the optimal AW (f).
+Example 4.2 (Quadratic labeling function with linear policy) .Consider a hiring scenario where
+a company needs to assess each applicant’s fitness for a position. Each applicant has a feature
+X∈[0,1]demonstrating his/her ability (e.g., coding ability for a junior software engineer position).
+Suppose the labeling function h(x) =−4x·(x−1)is quadratic with maximum taken at x= 0.5,
+which implies that an applicant’s fitness will decrease if the ability is too low ("underqualified") or
+too high ("overqualified")1. Under the quadratic labeling function, if the decision-maker can only
+select a decision policy ffrom a linear hypothesis class F(i.e., violating the requirement that h∈ F
+in Thm. 4.1), then the optimal policies maximizing decision-maker welfare and agent improvement
+are completely different, i.e., DW(f)andIMP(f)cannot be maximized simultaneously. Moreover,
+agent safety SF(f)is also not guaranteed. To illustrate this, consider the example in Fig. 1 with five
+1"Overqualified" means an applicant has skills significantly exceeding the requirement. In this case, he/she may fit
+more senior positions or desire a much higher salary than this position can offer.
+8agents: four green agents with features below 0.5and a black one above 0.5, then the policy that
+maximizes IMP(f)can cause the qualification of black agent to deteriorate and lead to negative
+agent safety SF (f)<0.
+Example 4.3 (Quadratic labeling function and policy) .Under the same setting of Example 4.2,
+instead of restricting fto be linear, let the decision-maker deploy f(x) =h(x) =−4x·(x−1).
+Obviously, fmaximizes both the decision-maker welfare andagent welfare . However, it can hurt
+social welfare. Consider an example shown in Fig. 2 where all agents have the same feature x= 0.4
+and information level K= 1(violating the information level requirement of Thm. 4.1). Their
+cost function is c(x, x′) = 4 ·(x−x′)2. Since ∇f(x) =−8x+ 4 = 3 .68, agents derive Qf
+x(x′) =
+f(x)+3.68·(x′−x) = 3 .68·x′−0.512. Then agent post-response feature will be x∗=x+3.68
+8= 0.86.
+As a result, the agent qualification becomes h(x∗) =h(0.86) = 0 .4816 < h(0.4) = 0 .96, which is
+worse than the initial qualification, i.e., agent safety is not optimal by deploying f=h.
+Figure 2: Violation of agent safety SF(f)when f=his quadratic (the blue curve): All agents
+have the same feature value concentrating on X= 0.4(the solid black circle). If applying the
+ground truth as the decision policy, all agents will respond by moving to x∗= 0.86(the hollow black
+circle). Although the policy maximizes AW(f)andDW(f), all agents become less qualified after
+they respond, harming the social welfare . Both IMP (f)and SF (f)are smaller than 0.
+Examples 4.2 and 4.3 illustrate the potential conflict between decision-maker, social, and agent
+welfare and verify Thm. 4.1. Even for simple quadratic settings, the results under the linear setting
+in Bechavod et al. (2022) no longer hold, and simultaneously maximizing three types of welfare can
+be impossible. In the following sections, we further analyze the relationships between each pair of
+welfare in general non-linear settings.
+4.2 Compatibility analysis of each welfare pair
+Sec. 4.1 provides the necessary and sufficient condition for the alignment of all welfare. A natural
+question is whether there exist scenarios under which different pairs of welfare are compatible and
+can be simultaneously maximized. This section answers this question and explores the relationships
+between the welfare of every two parties in general settings.
+94.2.1 Decision-maker welfare & agent welfare
+We first examine the relationships between decision-maker welfare DW(f)andagent welfare AW(f),
+the following result shows that the two can be maximized under the same f.
+Proposition 4.4. Under the realizability assumption that h∈ F, decision-maker welfare and agent
+welfare are compatible and can attain the optimum simultaneously.
+Note that agent welfare AW(f) = 0as long as f(x)≥h(x)holds for all x. When h∈ F, the
+decision-maker can simply deploy f=hto assign each agent the correct outcome; this ensures
+optimal welfare for both parties.
+4.2.2 Decision-maker welfare & social welfare
+Unlike compatibility results in Sec 4.2.1, the decision-maker welfare and either element of social
+welfare(i.e., agent improvement IMP(f)or agent safety SF(f)) in general are not compatible, and
+their compatibility needs all conditions in Thm. 4.1 to be satisfied.
+Proposition4.5. The decision-maker welfare and social welfare are guaranteed to attain the optimum
+simultaneously regardless of the feature distribution PXand the cost function c(x, x′)if and only if
+Thm. 4.1 holds.
+As illustrated in Example 4.2, each pair of welfare may be incompatible when h /∈ F. Intuitively,
+since the decision-maker cannot deploy f=h, it cannot make accurate decisions and provide a
+correct direction for agents to improve. Similarly, Example 4.3 shows the incompatibility when Fis
+non-linear. Although the decision-maker can deploy f=hto attain the optimal DW, the agents may
+fail to improve because their limited information level produces incorrect estimations of f. When F
+is non-linear, the gradient ∇f(x)is no longer a constant, and agents with K= 1will respond in the
+wrong directions.
+4.2.3 Agent improvement & agent safety
+While Prop. 4.5 holds for both measures (i.e., agent improvement IMP(f)andagent safety SF(f))
+of social welfare, the two in general are not compatible (as shown in Example 4.3). However, we can
+identify the necessary and sufficient conditions under which IMP(f)andSF(f)attain the maximum
+simultaneously in general non-linear settings.
+Theorem 4.6 (Maximize agent improvement while ensuring safety) .Suppose the agents have
+information level Kand respond to fbased on Def. 3.2. Let f∗∈arg max f∈FIMP(f)be any policy
+that maximizes the agent improvement, and let Qf∗
+xbe the estimation of f∗for agents with feature
+vector x. Then any f∗is guaranteed to be safe (i.e., SF(f∗) = 0) regardless of the feature distribution
+PXand the cost function c(x, x′)if and only if eitherof the following scenarios holds: (i) Thm. 4.1
+holds; (ii) For each agent with feature vector x, we have:∂h
+∂exi·∂Qf∗
+x
+∂exi≥0holds almost everywhere in
+ex= [ex1, ...,exd]∈dom(X).
+It is trivial to see scenario (i)in Thm. 4.6 is a sufficient condition (it ensures the compatibility of
+three welfare). For scenario (ii), it implies that for any arbitrary agent with feature x, the f∗will
+result in an estimation Qf∗
+x, under which each agent changes her features in directions to improve
+the qualification.
+104.2.4 Social welfare & agent welfare
+Finally, we discuss the relationship between social welfare andagent welfare . Sinceagent welfare is
+optimal only when f(x)≥h(x)always holds, fsatisfying such a constraint generally cannot maximize
+social welfare . In Example 4.2, a policy that maximizes agent improvement may underestimate
+certain agents’ qualifications and lead to AW(f)<0. Nonetheless, we can still find the necessary
+and sufficient conditions under which IMP(f)andSF(f)are compatible, as presented below.
+Theorem 4.7 (Maximize social welfare and agent welfare) .Suppose the agents have information level
+Kand respond to fbased on Def. 3.2. Denote F′as{f:f∈ Fand f (x)≥h(x),∀x∈dom(x)}
+be the set of policies maximizing the agent welfare. Then for any f∗∈arg max f∈FIMP(f),f∗is
+guaranteed to also maximize AW(f)regardless of the feature distribution PXand the cost function
+c(x, x′)if and only if eitherof the following scenarios holds: (i) Thm. 4.1 holds; (ii) ∃f′∈ F′and
+constant C∈R+to let Qf′
+x=Qf∗
+x+Chold almost everywhere in dom(x).
+Again, scenario (i)in Thm. 4.7 is a sufficient condition, while scenario (ii)means that the decision-
+maker can find a classifier that induces perfect agent welfare while simultaneously giving the agents
+the same information as f∗. Note that Qf′
+x=Qf∗
+x+Cdoes not necessarily imply f′=f∗+C
+when agents have a limited information level K. For example, when agents have K= 2, we can
+have f∗=ex−x−1andf′=x2
+2+ 0.5, where f∗belongs to the exponential function family but f′
+belongs to the quadratic function family.
+To conclude, only decision-maker welfare andagent welfare can be maximized at the same time
+relatively easily, other pairs of welfare need strong conditions to align under the general settings.
+Even the two notions in social welfare (i.e., agent improvement and safety) can easily contradict
+each other, and the decision-maker welfare andsocial welfare need the most restrictive conditions
+(which is exactly Thm. 4.1) to be aligned. These results highlight the difficulties of balancing the
+welfare of different parties in general non-linear settings, which further motivates the “irreducible"
+optimization framework we will introduce in Sec. 5.
+5 Welfare-Aware Optimization
+In this section, we present our algorithm that balances the welfare of all parties in general settings.
+We formulate this welfare-aware learning problem under the strategic setting as a regularized
+optimization where each welfare violation is represented by a loss term. Formally, we write the
+optimization problem as follows.
+min
+f∈F
+ℓDW+λ1·ℓSWF +λ2·ℓAW	
+(2)
+where ℓDW,ℓSWF,ℓAWare the losses corresponding to decision-maker welfare ,social welfare , and
+agent welfare , respectively. The hyper-parameters λ1, λ2≥0balance the trade-off between the
+welfare of three parties. Given training dataset {(xi, yi)}N
+i=1, the decision-maker first learns hand
+then calculates each loss as follows:
+•ℓDW: we may use common loss functions such as cross-entropy loss, 0-1 loss, etc., and quan-
+tifyℓDWas the average loss over the dataset. In experiments (Sec. 6), we adopt ℓDW=
+1
+NPN
+i=1− 
+yilog 
+f(xi)
++ (1−yi) log 
+1−f(xi)
+.
+11Algorithm 1: Strategic Welfare-Aware Optimization ( STWF)
+Input: Training set S, Agent response function ∆ϕ, Agent information level K
+Parameters : Total number of epochs n, batch size B, learning rate γ, hyperparameters λ1, λ2,
+initial parameters θforf
+Output: Deployed classifier f∈ F
+1:Train ground truth model h∈ HwithS
+2:fort∈ {1, . . . n}do
+3:fork∈ {1, . . .n
+B}do
+4:Calculate bYB=fθ(XB)
+5:Calculate the post-response features of agents: X∗
+B= ∆ ϕ 
+XB, Ik(f, x))
+6:Calculate the outcomes after responses: Y∗
+B=h(X∗
+B)
+7:Calculate ℓDW, ℓSWF, ℓAW
+8:Compute L=ℓDW+λ1·ℓSWF +λ2·ℓAW
+9:Update θ=θ−γ·∂L
+∂θ
+10:Return θ
+•ℓSWF: since both agent improvement andagent safety indicate the social welfare . We define
+ℓSWF =ℓIMP+ℓSF, where ℓIMPis the loss associated with agent improvement and ℓSFmeasures
+the violation of agent safety. In experiments (Sec. 6), we also present empirical results when
+ℓSWFonly includes one of the two losses. Specifically, the two losses are defined as follows.
+–ℓIMP: it aims to penalize fwhen it induces less agent improvement. We can write it as
+the cross entropy loss over h(x∗
+i)(i.e., the qualification after agent response) and 1(i.e.,
+perfectly qualified). Formally, ℓIMP=1
+NPN
+i=1−log(h(x∗
+i)).
+–ℓSF: it penalizes the model whenever the agent qualification deteriorates after the response.
+Formally, ℓSF=1
+NP
+x∈ASF−log(h(x∗))where the set ASF={xi|h(x∗
+i)< h(xi)}includes
+all agents with deteriorated qualifications.
+•ℓAW: it focuses on agent welfare and penalizes fwhenever the model underestimates the actual
+qualification of the agent. Formally, ℓAW=1
+NP
+x∈AAW−log(f(x))where the set AAW=
+{xi|f(xi)< h(xi)}includes all agents that are underestimated by the model.
+The optimization (2)can be solved using gradient-based algorithms, as long as the gradient of losses
+with respect to the model parameter (denoted as θ) exists. Since f, hare continuous, gradients
+already exist for ℓDWandℓAW. For ℓSWF, because it is a function of post-response feature X∗,
+we need gradients to exist for X∗as well. If we already know how agents respond to the model
+(i.e., X∗as a function of fillustrated in Def. 3.2), then we only need gradients to exist for ∇f(x)
+with respect to θ(i.e., Hessian of f). Thus, the objective (2)can be easily optimized if ∇f(x)is
+continuous in θ, which is a relatively mild requirement and has also been used in previous literature
+(Rosenfeld et al., 2020). The complete algorithm for StraTegicWelFare-Aware optimization ( STWF)
+is shown in Alg. 1.
+Learning agent response function ∆ϕ∆ϕ∆ϕ.Note that while Sec. 3 introduces agent response
+following Def. 3.2, our algorithm does not have this requirement; In practice, agent behavior can be
+more complicated, and we can consider a general learnable response function x∗= ∆ ϕ(x, Ik(f, x)).
+12Note that Levanon and Rosenfeld (2021) proposed a concave optimization protocol to learn a response
+function linear in any representation space of agents’ features. However, their design implicitly
+assumes the agents have the perfect knowledge of the representation mapping function used by the
+decision-maker so that they respond based on their representations, which is unrealistic. Here, we
+avoid this by only assuming the response is a parameterized function of agents’ features xand the
+information up to level K, i.e., x∗= ∆ ϕ(x, Ik(f, x))where ϕare parameters for some models such
+as neural networks and Ik(f, x)is all available information for agents with information level Kand
+feature x. With this assumption, we provide Alg. 2 as a general protocol to learn ϕ. Then we can
+plug the learned ∆ϕinto STWF(Alg. 1) to optimize the welfare.
+Algorithm 2: AgentResponse
+Input: Experimental training set Scontaining nsamples {xj, yj}n
+j=1,Narbitrary classifiers
+{fi}N
+i=1, ground-truth model h, agent information level K
+Parameters : initial parameters ϕfor the agent response function ∆ϕ(x, Ik(f, x))
+Output: Parameters ϕ
+1:S0← {}
+2:fori∈ {1, . . . N }do
+3:Impose fionSand obtain x∗where x∗is the post-response feature vector
+4:Si← {{ xj, IK(fi, xj), x∗}}{build up the new training set for agent response}
+5:S=Si−1∪ Si
+6:Train ∆ϕwithS
+7:Return ϕ
+Alg. 2 requires a population for controlled experiments. As pointed out by Miller et al. (2020), we
+can never understand the agent response without the controlled trials. Though the availability of
+controlled experiments has been assumed in most literature on performative prediction (Perdomo
+et al., 2020; Izzo et al., 2021), it may be costly to conduct the experiments in practice.
+6 Experiments
+We conduct comprehensive experiments on one synthetic and two real-world datasets to validate
+STWF. We first illustrate the trade-offs for each pair of welfare and examine how they can be balanced
+by adjusting λ1, λ2in Alg. 1. Then, we compare STWFwith previous algorithms that only consider
+the welfare of a subset of parties. Since many of the existing algorithms also consider fairness across
+agents from different groups, we also evaluate the unfairness induced by our algorithm in addition
+to decision-maker, agent, and social welfare. We use a three-layer ReLU neural network to learn
+labeling function hand logistic regression to train the policy f, and D(x) =1(x≥0.5). For each
+parameter setting, we perform 20 independent runs of the experiments with different random seeds
+and report the average.
+6.1 Datasets
+Next, we introduce the data used in the experiments. For all datasets, 80%of the data is used for
+training.
+130.0 0.5 1.0 1.5 2.0
+1
+0.2
+0.00.20.40.6
+DW
+SWF
+AW
+0.0 0.5 1.0 1.5 2.0
+1
+0.2
+0.00.20.40.60.8
+DW
+SWF
+AW
+0.0 0.5 1.0 1.5 2.0
+1
+0.2
+0.00.20.40.60.8
+DW
+SWF
+AW(a) Welfare while increasing λ1and keeping λ2= 0.
+0.0 0.5 1.0 1.5 2.0
+2
+0.2
+0.00.20.40.6
+DW
+SWF
+AW
+0.0 0.5 1.0 1.5 2.0
+2
+0.00.20.40.60.8
+DW
+SWF
+AW
+0.0 0.5 1.0 1.5 2.0
+2
+0.2
+0.00.20.40.60.8
+DW
+SWF
+AW
+(b) Welfare while increasing λ2and keeping λ1= 0.
+Figure 3: Effects of adjusting λ1, λ2on the welfare of each party: synthetic data (left plot), German
+Credit data (middle plot), ACSIncome-CA data (right plot).
+•Synthetic data. It has two features X= (X1, X2)and a sensitive attribute Z∈ {0,1}for
+demographic groups. Let (X|Z=z)be multivariate Gaussian random variables with different
+means and variances conditioned on Z. Labeling function h(x)is a quadratic function in both
+x1, x2, and the label Y=1(h(X)≥0.5). We generate 10000independent samples with 20%
+of them having Z= 1and the rest Z= 0. We assume all agents have the same cost function
+c(x, x′) = 5· ∥x′−x∥2.
+•ACSIncome-CA data (Ding et al., 2021). It contains income-related data for California
+residents. Let label Ybe whether an agent’s annual income is higher than 50K USD and let the
+sensitive attribute Zbesex. We randomly select 20000samples from the data of year 2018. We
+assume all agents have the same effort budget c(x, x′) =∥x′−x∥2.
+•German Credit data (Dua and Graff, 2017). It has 1000samples and the label Yis whether the
+agent’s credit risk is high or low. We adopt the data preprocessed by (Jiang and Nachum, 2020)
+where ageserves as the sensitive attribute to split agents into two groups. We assume the agents
+are able to improve the following features: existing account status ,credit history ,credit
+amount,saving account ,present employment ,installment rate ,guarantors ,residence .
+We assume all agents have the same effort budget c(x, x′) =∥x′−x∥2.
+6.2 Balance the Welfare with Different λ1, λ2
+We first validate STWFand show that adjusting the hyper-parameters λ1, λ2effectively balances
+the welfare of different parties. The results in Fig. 3 are as expected, where social welfare SWF (f)
+14increases in λ1andagent welfare AW(f)increases in λ2. This shows the effectiveness of using our
+algorithm to adjust the allocation of welfare under different situations. As we analyzed in Sec. 4,
+under the general non-linear setting, each pair of welfare possibly conflicts with each other. Fig. 3
+validates this and it demonstrates the trade-offs between different welfare pairs on two datasets.
+Specifically, for the synthetic data, increasing social welfare slightly conflicts with decision-maker
+welfare, while increasing agent welfare drastically conflicts with the decision-maker welfare . But the
+trade-off between social welfare andagent welfare is not obvious. For the German Credit dataset,
+increasing social welfare seems to slightly conflict with both agent welfare anddecision-maker welfare ,
+while increasing agent welfare has an obvious trade-off with decision-maker welfare. Conversely, for
+the ACSIncome-CA dataset, increasing social welfare only sacrifices agent welfare , but increasing
+agent welfare incurs conflicts with both other welfare.
+6.3 Comparison with Previous Algorithms
+Since STWFis the first optimization protocol that simultaneously considers the welfare of the decision-
+maker, agent, and society, there exists no algorithm that we can directly compare with. Nonetheless,
+we can adapt existing algorithms that only consider the welfare of a subset of parties to our setting,
+and compare them with STWF.
+Specifically, we compare STWFwith four algorithms:
+•Empirical Risk Minimization ( ERM):It only considers decision-maker welfare by minimizing
+the predictive loss on agent current data.
+•Safety ( SAFE)(Rosenfeld et al., 2020): It considers both decision-maker welfare andagent safety .
+The goal is to train an accurate model without hurting agent qualification.
+•Equal Improvement ( EI)(Guldogan et al., 2022): It considers agent improvement by equalizing
+the probability of unqualified agents becoming qualified from different groups, as opposed to
+maximizing agent improvement considered in our work.
+•Bounded Effort ( BE)(Heidari et al., 2019): It considers agent improvement by equalizing the
+proportion of new agents becoming qualified after the best response. The difference between BE
+andEIis a bit subtle, where we show details in Tab. 1.
+Note that both EIand BEfocus on fairness across different groups. To comprehensively compare
+different algorithms, we also evaluate the unfairness induced by each algorithm. Specifically,
+we consider both fairness notions with and without considering agent behavior, including Equal
+Improvability ( EI), Bounded Effort ( BE), Demographic Parity ( DP), and Equal Opportunity ( EO),
+which are defined in Tab. 1. We run all experiments on a MacBook Pro with Apple M1 Pro chips,
+memory of 16GB, and Python 3.9.13. In all experiments of Sec. 6.3, we use the ADAMoptimizer.
+Except ERM, we first perform hyper-parameter selections for all algorithms, e.g., we select λ1, λ2of
+STWFby grid searching with cross-validation. For STWF, we perform cross-validation on 7 different
+seeds to select the learning rate from {0.001,0.01,0.1}andλ1, λ2∈ {0,0.5,1,1.5,2}. For EI,BEand
+SAFE, we choose the hyperparameters in the same way as the previous works (Guldogan et al., 2022;
+Rosenfeld et al., 2020; Heidari et al., 2019). Specifically, λ(the strength of the regularization) is 0.1
+for all these algorithms.
+15Table 1: Fairness notions used in our experiments.
+Notion Definition
+Equal Improvability ( EI) P(f(x∗)≥0.5|f(x)<0.5, Z=z) =P(f(x∗)≥0.5|f(x)<0.5)
+Bounded Effort ( BE) P(f(x∗)≥0.5, f(x)<0.5|Z=z) =P(f(x∗)≥0.5, f(x)<0.5)
+Demographic Parity ( DP) P(f(x)≥0.5|Z=z) =P(f(x)≥0.5)
+Equal Opportunity ( EO) P(f(x)≥0.5|Y= 1, Z=z) =P(f(x)≥0.5|Y= 1)
+Table 2: Comparisons of welfare between STWFand other benchmark algorithms where the largest
+values are boldfaced.
+Algorithms
+Dataset Metric ERM STWF SAFE EI BE
+SyntheticTotal
+DW
+SWF
+AW0.76±0.08
+0.71±0.05
+0.09±0.05
+−0.05±0.021.08±.0.16
+0.75±0.08
+0.33±0.08
+−0.003±0.030.74±0.09
+0.71±0.05
+0.07±0.06
+−0.04±0.030.76±0.08
+0.71±0.06
+0.09±0.05
+−0.05±0.020.75±0.10
+0.71±0.05
+0.08±0.07
+−0.04±0.04
+German
+CreditTotal
+DW
+SWF
+AW0.710±0.10
+0.781±0.10
+0.030±0.03
+−0.100±0.000.704±.0.14
+0.736±0.13
+0.022±0.04
+−0.052±0.000.703±0.11
+0.779±0.10
+0.030±0.04
+−0.099±0.000.707±0.11
+0.780±0.10
+0.031±0.04
+−0.100±0.000.706±0.11
+0.777±0.10
+0.030±0.04
+0.100±0.00
+ACSIncome-
+CATotal
+DW
+SWF
+AW0.74±0.06
+0.76±0.03
+0.12±0.05
+−0.14±0.000.95±.0.15
+0.76±0.05
+0.41±0.10
+−0.21±0.000.74±0.04
+0.76±0.03
+0.12±0.05
+−0.14±0.000.74±0.06
+0.76±0.13
+0.12±0.04
+−0.14±0.000.73±0.08
+0.76±0.05
+0.12±0.05
+−0.15±0.00
+6.3.1 Comparison of welfare.
+Tab. 2 summarizes the performances of all algorithms, where STWFproduces the largest total welfare
+on the synthetic dataset and the ACSIncome-CA dataset. For the German Credit dataset, all
+algorithms produce similar welfare, while the ERMhas a slight advantage. More clearly, as shown
+in the left plot from Fig. 4a to Fig. 4c, STWFgains a large advantage, demonstrating the potential
+benefits of training ML model in a welfare-aware manner. Meanwhile, although STWFdoes not
+have a similar advantage on the German Credit dataset, it produces a much more balanced welfare
+allocation, suggesting the ability of STWFto take care of each party under the strategic learning
+setting. However, since we select λ1, λ2only based on the sum of the welfare, it is possible to sacrifice
+the welfare of some specific parties (e.g., agent welfare in the ACSincome-CA dataset). This can be
+solved by further adjusting λ1, λ2based on other selection criteria.
+Besides, we also illustrate that safety is not automatically guaranteed if we only aim to maximize
+agent improvement in the synthetic dataset. Specifically, if we let LSWF =LIMP, we can visualize
+the safety in Fig. 5. It is obvious that only when LSFis added into LSWFwill the decision rule
+become perfectly safe as λ1increases.
+6.3.2 Improve welfare does not ensure fairness.
+The middle plot and the right plot of Fig. 4 compare the unfairness of different algorithms. Although
+STWFhas the highest welfare among all algorithms, it does not ensure fairness. These results further
+shed light on a thought-provoking question: how likely is it for a fairness-aware algorithm to “harm"
+16ERM STWF SAFE EI BE
+model0.00.20.40.60.81.0welfareDW
+SWF
+AW
+TOTAL
+ERM STWF SAFE EI BE
+model0.00.10.20.30.4unfairnessDP fairness
+EO fairness
+ERM STWF SAFE EI BE
+model0.000.050.100.150.200.250.300.35unfairnessEI fairness
+BE fairness(a) Comparisons under the synthetic dataset.
+ERM STWF SAFE EI BE
+model0.00.20.40.60.8welfareDW
+SWF
+AW
+TOTAL
+ERM STWF SAFE EI BE
+model0.000.020.040.060.08unfairnessDP fairness
+EO fairness
+ERM STWF SAFE EI BE
+model0.000.020.040.060.08unfairness
+EI fairness
+BE fairness
+(b) Comparisons under the German Credit dataset.
+ERM STWF SAFE EI BE
+model0.2
+0.00.20.40.60.81.0welfareDW
+SWF
+AW
+TOTAL
+ERM STWF SAFE EI BE
+model0.000.020.040.060.080.10unfairnessDP fairness
+EO fairness
+ERM STWF SAFE EI BE
+model0.000.010.020.030.040.050.060.07unfairnessEI fairness
+BE fairness
+(c) Comparisons under the ACSincome-CA dataset.
+Figure 4: Comparisons of welfare (left plot) and unfairness (middle & right plot) for different
+algorithms.
+each party’s welfare under the strategic setting? Recent literature on fairness (Guldogan et al., 2022;
+Heidari et al., 2019) already began to consider “agent improvement" when strategic behaviors are
+present. However, it remains an intriguing direction to consider fairness and welfare together.
+7 Conclusions and Societal Impacts
+To facilitate socially responsible decision-making on strategic human agents in practice, our work is
+the first to consider the welfare of all parties in strategic learning under non-linear settings and the
+agents have specific information levels and respond to the decision policy by first estimating the
+decision policy and then best respond to the estimated policy. We formally studied the relationships
+between decision-maker welfare ,social welfare , andagent welfare and revealed that it is non-trivial
+to balance the welfare of each party. Thus, we then proposed STWF, the first welfare-aware algorithm
+for general strategic learning problems.
+Although our algorithm can effectively balance the welfare of different parties, it relies on the accurate
+170.0 0.5 1.0 1.5 2.0
+1
+0.05
+0.04
+0.03
+0.02
+0.01
+0.00SF
+LSWF=LIMP+LSF
+LSWF=LIMPFigure 5: Comparisons of safety under the synthetic dataset.
+estimation of agent’s response. In practice, the agent’s behavior can be highly complex. With
+incorrect estimations of agents’ behavior, our algorithm may fail and lead to unexpected outcomes.
+Thus, it is worthwhile for future work to collect real data from human feedback, and learn agent
+response function. Additionally, our experiments demonstrate that welfare and fairness may not
+imply each other, making it necessary to consider both notions theoretically to further promote
+trustworthy machine learning.
+References
+Saba Ahmadi, Hedyeh Beyhaghi, Avrim Blum, and Keziah Naggita. The strategic perceptron. In
+Proceedings of the 22nd ACM Conference on Economics and Computation , pages 6–25, 2021.
+Saba Ahmadi, Hedyeh Beyhaghi, Avrim Blum, and Keziah Naggita. On classification of strategic
+agents who can both game and improve. arXiv preprint arXiv:2203.00124 , 2022a.
+Saba Ahmadi, Hedyeh Beyhaghi, Avrim Blum, and Keziah Naggita. Setting fair incentives to
+maximize improvement. arXiv preprint arXiv:2203.00134 , 2022b.
+Tal Alon, Magdalen Dobson, Ariel Procaccia, Inbal Talgam-Cohen, and Jamie Tucker-Foltz. Multia-
+gent evaluation mechanisms. Proceedings of the AAAI Conference on Artificial Intelligence , 34:
+1774–1781, 2020.
+Flavia Barsotti, Ruya Gokhan Kocer, and Fernando P. Santos. Transparency, detection and imitation
+in strategic classification. In Proceedings of the Thirty-First International Joint Conference on
+Artificial Intelligence, IJCAI-22 , pages 67–73, 2022.
+Yahav Bechavod, Katrina Ligett, Steven Wu, and Juba Ziani. Gaming helps! learning from strategic
+interactions in natural dynamics. In International Conference on Artificial Intelligence and
+Statistics , pages 1234–1242, 2021.
+Yahav Bechavod, Chara Podimata, Steven Wu, and Juba Ziani. Information discrepancy in strategic
+learning. In International Conference on Machine Learning , pages 1691–1715, 2022.
+OmerBen-PoratandMosheTennenholtz. Bestresponseregression. In Advances in Neural Information
+Processing Systems , 2017.
+Mark Braverman and Sumegha Garg. The role of randomness and noise in strategic classification.
+CoRR, abs/2005.08377, 2020.
+18Yatong Chen, Jialu Wang, and Yang Liu. Strategic recourse in linear classification. CoRR,
+abs/2011.00355, 2020a.
+Yiling Chen, Yang Liu, and Chara Podimata. Learning strategy-aware linear classifiers. Advances in
+Neural Information Processing Systems , 33:15265–15276, 2020b.
+Sarah Dean, Mihaela Curmei, Lillian J. Ratliff, Jamie Morgenstern, and Maryam Fazel. Emergent
+segmentation from participation dynamics and multi-learner retraining, 2023.
+Frances Ding, Moritz Hardt, John Miller, and Ludwig Schmidt. Retiring adult: New datasets for
+fair machine learning. Advances in neural information processing systems , 34:6478–6490, 2021.
+Jinshuo Dong, Aaron Roth, Zachary Schutzman, Bo Waggoner, and Zhiwei Steven Wu. Strategic
+classification from revealed preferences. In Proceedings of the 2018 ACM Conference on Economics
+and Computation , page 55–70, 2018.
+Dheeru Dua and Casey Graff. UCI machine learning repository, 2017. URL https://archive.ics.
+uci.edu/ml/datasets/credit+approval .
+Itay Eilat, Ben Finkelshtein, Chaim Baskin, and Nir Rosenfeld. Strategic classification with graph
+neural networks, 2022.
+Danielle Ensign, Sorelle A Friedler, Scott Neville, Carlos Scheidegger, and Suresh Venkatasubrama-
+nian. Runaway feedback loops in predictive policing. In Conference on fairness, accountability
+and transparency , pages 160–171. PMLR, 2018.
+Andrew Estornell, Sanmay Das, and Yevgeniy Vorobeychik. Incentivizing truthfulness through
+audits in strategic classification. In Proceedings of the AAAI Conference on Artificial Intelligence ,
+number 6, pages 5347–5354, 2021.
+Massimo Florio. Applied welfare economics: Cost-benefit analysis of projects and policies . Routledge,
+2014.
+Ozgur Guldogan, Yuchen Zeng, Jy-yong Sohn, Ramtin Pedarsani, and Kangwook Lee. Equal improv-
+ability: A new fairness notion considering the long-term impact. In The Eleventh International
+Conference on Learning Representations , 2022.
+Moritz Hardt and Celestine Mendler-Dünner. Performative prediction: Past and future. arXiv
+preprint arXiv:2310.16608 , 2023.
+Moritz Hardt, Nimrod Megiddo, Christos Papadimitriou, and Mary Wootters. Strategic classification.
+InProceedings of the 2016 ACM Conference on Innovations in Theoretical Computer Science ,
+page 111–122, 2016.
+Keegan Harris, Hoda Heidari, and Steven Z Wu. Stateful strategic regression. Advances in Neural
+Information Processing Systems , pages 28728–28741, 2021.
+Hoda Heidari, Vedant Nanda, and Krishna Gummadi. On the long-term impact of algorithmic
+decision policies: Effort unfairness and feature segregation through social learning. In 36th
+International Conference on Machine Learning , pages 2692–2701, 2019.
+19Guy Horowitz and Nir Rosenfeld. Causal strategic classification: A tale of two shifts, 2023.
+Zachary Izzo, Lexing Ying, and James Zou. How to learn when data reacts to your model:
+Performative gradient descent. In Proceedings of the 38th International Conference on Machine
+Learning , pages 4641–4650, 2021.
+Meena Jagadeesan, Celestine Mendler-Dünner, and Moritz Hardt. Alternative microfoundations for
+strategic classification. In Proceedings of the 38th International Conference on Machine Learning ,
+pages 4687–4697, 2021.
+Heinrich Jiang and Ofir Nachum. Identifying and correcting label bias in machine learning. In
+International Conference on Artificial Intelligence and Statistics , pages 702–712. PMLR, 2020.
+Kun Jin, Xueru Zhang, Mohammad Mahdi Khalili, Parinaz Naghizadeh, and Mingyan Liu. Incentive
+mechanisms for strategic classification and regression problems. In Proceedings of the 23rd ACM
+Conference on Economics and Computation , page 760–790, 2022.
+Jon Kleinberg and Manish Raghavan. How do classifiers induce agents to invest effort strategically?
+page 1–23, 2020.
+Sagi Levanon and Nir Rosenfeld. Strategic classification made practical. In International Conference
+on Machine Learning , pages 6243–6253. PMLR, 2021.
+Sagi Levanon and Nir Rosenfeld. Generalized strategic classification and the case of aligned
+incentives. In International Conference on Machine Learning, ICML 2022, 17-23 July 2022,
+Baltimore, Maryland, USA , pages 12593–12618, 2022.
+Lydia T. Liu, Sarah Dean, Esther Rolf, Max Simchowitz, and Moritz Hardt. Delayed impact of
+fair machine learning. In Proceedings of the Twenty-Eighth International Joint Conference on
+Artificial Intelligence, IJCAI-19 , pages 6196–6200, 2019.
+Lydia T Liu, Ashia Wilson, Nika Haghtalab, Adam Tauman Kalai, Christian Borgs, and Jennifer
+Chayes. The disparate equilibria of algorithmic decision making when individuals invest rationally.
+InProceedings of the 2020 Conference on Fairness, Accountability, and Transparency , pages
+381–391, 2020.
+John Miller, Smitha Milli, and Moritz Hardt. Strategic classification is causal modeling in disguise.
+InProceedings of the 37th International Conference on Machine Learning , 2020.
+SmithaMilli, JohnMiller, AncaDDragan, andMoritzHardt. Thesocialcostofstrategicclassification.
+InProceedings of the Conference on Fairness, Accountability, and Transparency , pages 230–239,
+2019.
+Juan Perdomo, Tijana Zrnic, Celestine Mendler-Dünner, and Moritz Hardt. Performative prediction.
+InProceedings of the 37th International Conference on Machine Learning , pages 7599–7609, 2020.
+Reilly Raab and Yang Liu. Unintended selection: Persistent qualification rate disparities and
+interventions. Advances in Neural Information Processing Systems , pages 26053–26065, 2021.
+20Esther Rolf, Max Simchowitz, Sarah Dean, Lydia T Liu, Daniel Bjorkegren, Moritz Hardt, and
+Joshua Blumenstock. Balancing competing objectives with noisy data: Score-based classifiers
+for welfare-aware machine learning. In International Conference on Machine Learning , pages
+8158–8168. PMLR, 2020.
+Nir Rosenfeld, Anna Hilgard, Sai Srivatsa Ravindranath, and David C Parkes. From predictions to
+decisions: Using lookahead regularization. In Advances in Neural Information Processing Systems ,
+pages 4115–4126, 2020.
+Yonadav Shavit, Benjamin L. Edelman, and Brian Axelrod. Causal strategic linear regression. In
+Proceedings of the 37th International Conference on Machine Learning , ICML’20, 2020.
+Ravi Sundaram, Anil Vullikanti, Haifeng Xu, and Fan Yao. Pac-learning for strategic classification.
+InProceedings of the 38th International Conference on Machine Learning , pages 9978–9988, 2021.
+Wei Tang, Chien-Ju Ho, and Yang Liu. Linear models are robust optimal under strategic behavior. In
+Proceedings of The 24th International Conference on Artificial Intelligence and Statistics , volume
+130 ofProceedings of Machine Learning Research , pages 2584–2592, 13–15 Apr 2021.
+Xueru Zhang, Ruibo Tu, Yang Liu, Mingyan Liu, Hedvig Kjellstrom, Kun Zhang, and Cheng
+Zhang. How do fair decisions fare in long-term qualification? In Advances in Neural Information
+Processing Systems , pages 18457–18469, 2020.
+Xueru Zhang, Mohammad Mahdi Khalili, Kun Jin, Parinaz Naghizadeh, and Mingyan Liu. Fairness
+interventions as (Dis)Incentives for strategic manipulation. In Proceedings of the 39th International
+Conference on Machine Learning , pages 26239–26264, 2022.
+21A Proofs
+A.1 Proof of Prop. 3.3
+Proof.(i) Proof of the necessity: The fact that agents are guaranteed to best respond means they
+can estimate fperfectly. Since the agents have information level K, they will estimate f(x)by the
+Taylor expansion of f(x)atxusing gradients up to the Kthorder and this results in a polynomial
+function with order at most Kas specified in Eqn. (3). Note that if the gradient of any order does
+not exist, the Taylor expansion will definitely not yield a correct estimation of f.
+f(x′) =f(x) +dX
+i=1∂f
+∂xi(x)(x′
+i−xi) +1
+2!dX
+i=1dX
+j=1∂2f
+∂xi∂xj(x)(x′
+i−xi)(x′
+j−xj) +··· (3)
++1
+K!dX
+i1=1···dX
+iK=1∂Kf
+∂xi1···∂xiK(x)(x′
+i1−xi1)···(x′
+iK−xiK)
+(ii) Proof of sufficiency: When fis a polynomial function with order k≥K, the agents with
+information level Kare guaranteed to know all levels of gradients of fwhich are non-zero. Then the
+agents can construct fperfectly according to Eqn. (3), then the agent response according to Def.
+3.2 is indeed the best response.
+A.2 Proof of Thm. 4.1
+Proof.1. Proof of the necessity: Since the maximization of the decision-maker welfare regardless of
+PXneeds f=h(otherwise, one can always take the point mass on the point that fmisidentifies
+as the new feature distribution and fis no longer the one maximizing the decision-maker welfare ),
+then h∈ Fis needed. Then the agents need to best respond to fto ensure the maximization of
+social welfare . If there is an arbitrary agent who does not best respond to f=h, this means she
+misses the largest possible improvement and the overall maximization of social welfare is failed.
+Thus, according to Prop. 3.3, hitself must be a polynomial of Xwith at most order Kto guarantee
+agents to best respond.
+2. Proof of sufficiency: When his a polynomial with order at most Kandh∈ F, the decision-maker
+can directly deploy h=fto ensure the maximization of all welfare.
+A.3 Proof of Prop. 4.5
+Proof.1. Proof of the necessity: Since the maximization of the decision-maker welfare needs f=h,
+then h∈ Fis needed. Then the agents need to best respond to fto ensure the maximization of
+social welfare. If there is an arbitrary agent who does not best respond to f=h, this means she
+misses the largest possible improvement and the overall maximization of social welfare is failed.
+Thus, according to Prop. 3.3, hitself must be a polynomial of Xwith at most order Kto guarantee
+agents to best respond.
+222. Proof of sufficiency: Thm. 4.1 is already a sufficient condition to guarantee the compatibility of
+decision-maker welfare andsocial welfare .
+A.4 Proof of Thm. 4.6
+Proof.1. Proof of the necessity: When (i) does not hold, f∗is not equal to hand the agents cannot
+perfectly estimate f∗with Qf∗
+x. Therefore, if (ii) does not hold, this means there must exist a
+cost function c(x, x′), under which we can find a region A⊂dom(X)where Qf∗
+xincreases while h
+decreases inside A. Thus, if we specify a cost function and an agent to satisfy the requirement that
+the agent can only change her features within A, then f∗is unsafe, and we prove that either (i) or
+(ii) should at least hold.
+2. Proof of the sufficiency: (i) is already a sufficient condition. Then for (ii), we know for each
+dimension i,Qf∗
+ximproves at the same direction as hand only the magnitude differs. This means
+agents will never be misguided by Qf∗
+x, thereby ensuring the safety.
+A.5 Proof of Thm. 4.7
+Proof.1. Proof of the necessity: When (i) does not hold, f∗is not equal to hand the agents cannot
+perfectly estimate f∗with Qf∗
+x. Therefore, if (ii) also does not hold, this means any classifier f′
+maximizing the agent welfare does not let the agents get an estimation Qf′
+xonly differing in constant
+toQimp,xwhich is the estimation for f∗. Thus, we can find a region A⊂dom(X)where Qf∗
+xwhere
+themax AQf∗
+x−minAQf∗
+xdoes not equal to max AQf′
+x−minAQf′
+x. Then if we find an agent and a
+cost function to let the agent can only modify her features within A, her improvement under f′will
+be different from her improvement under f∗, which means f′cannot maximize social welfare .
+2. Proof of the sufficiency: (i) is already a sufficient condition. Then for (ii), we know Qf′
+xinduces
+the same amount of improvement as Qf∗
+x, which completes the proof.
+B Plots with error bars
+We provide the error bar version of the previous figures as follows (Fig. 6, Fig. 7).
+230.0 0.5 1.0 1.5 2.0
+1
+0.2
+0.00.20.40.6
+DW
+SWF
+AW
+0.0 0.5 1.0 1.5 2.0
+1
+0.2
+0.00.20.40.60.8
+DW
+SWF
+AW
+0.0 0.5 1.0 1.5 2.0
+1
+0.2
+0.00.20.40.60.8
+DW
+SWF
+AW(a) Dynamics of welfare while increasing λ1and keeping λ2= 0in Eqn.(2).
+0.0 0.5 1.0 1.5 2.0
+2
+0.2
+0.00.20.40.6
+DW
+SWF
+AW
+0.0 0.5 1.0 1.5 2.0
+2
+0.00.20.40.60.8
+DW
+SWF
+AW
+0.0 0.5 1.0 1.5 2.0
+2
+0.2
+0.00.20.40.60.8
+DW
+SWF
+AW
+(b) Dynamics of welfare while increasing λ2and keeping λ1= 0in Eqn.(2).
+Figure 6: Error bar version of Fig. 3
+24ERM STWF SAFE EI BE
+model0.00.20.40.60.81.01.2welfareDW
+SWF
+AW
+TOTAL
+ERM STWF SAFE EI BE
+model0.00.10.20.30.40.5unfairnessDP fairness
+EO fairness
+ERM STWF SAFE EI BE
+model0.00.10.20.30.4unfairnessEI fairness
+BE fairness(a) Comparisons under the synthetic dataset.
+ERM STWF SAFE EI BE
+model0.2
+0.00.20.40.60.81.0welfareDW
+SWF
+AW
+TOTAL
+ERM STWF SAFE EI BE
+model0.000.020.040.060.080.10unfairnessDP fairness
+EO fairness
+ERM STWF SAFE EI BE
+model0.000.020.040.060.08unfairnessEI fairness
+BE fairness
+(b) Comparisons under the ACSincome-CA dataset.
+ERM STWF SAFE EI BE
+model0.00.20.40.60.8welfareDW
+SWF
+AW
+TOTAL
+ERM STWF SAFE EI BE
+model0.000.020.040.060.08unfairnessDP fairness
+EO fairness
+ERM STWF SAFE EI BE
+model0.000.020.040.060.08unfairnessEI fairness
+BE fairness
+(c) Comparisons under the German Credit dataset.
+Figure 7: Error bar version of Fig. 4.
+25

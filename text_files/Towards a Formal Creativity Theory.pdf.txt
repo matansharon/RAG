@@ -1,0 +1,956 @@
+arXiv:2405.02148v1  [cs.AI]  3 May 2024Towards a Formal Creativity Theory:
+Preliminary results in Novelty and Transformativeness
+Lu´ıs Esp ´ırito Santo
+CMS – CISUC,
+University of Coimbra, Portugal
+lesanto@dei.uc.pt
+CCLab – AILab,
+Vrije Universiteit Brussel, Belgium
+luis.espirito.santo@vub.beGeraint Wiggins
+CCLab – AILab
+Vrije Universiteit Brussel, Belgium
+Cognitive Science Group
+Queen Mary University of London, UK
+geraint.wiggins@vub.beAm´ılcar Cardoso
+Centre for Informatics and Systems (CISUC),
+University of Coimbra, Portugal
+amilcar@dei.uc.pt
+Abstract
+Formalizing creativity-related concepts has been a long-
+term goal of Computational Creativity. To the same end,
+we explore Formal Learning Theory in the context of
+creativity. We provide an introduction to the main con-
+cepts of this framework and a re-interpretation of terms
+commonly found in creativity discussions, proposing
+formal deﬁnitions for novelty and transformational cre-
+ativity. This formalisation marks the beginning of a
+research branch we call Formal Creativity Theory, ex-
+ploring how learning can be included as preparation for
+exploratory behaviour and how learning is a key part
+of transformational creative behaviour. By employing
+these deﬁnitions, we argue that, while novelty is neither
+necessary nor sufﬁcient for transformational creativity
+in general, when using an inspiring set, rather than a se-
+quence of experiences, an agent actually requires nov-
+elty for transformational creativity to occur.
+Introduction
+Since its origins in the 1960s, the theory known as the For-
+mal Learning Theory (FLT) was motivated by the task of
+providing natural language capabilities to machines. It ha s
+equally been used to explore long-lasting debates on chil-
+dren’s intellectual development or even to structure philo -
+sophical ﬁelds such as epistemology. It is a nonstatistical
+research stem within Computational Learning Theory (CLT)
+which facilitates the examination of limitations pertaini ng to
+learning under theoretical conditions, such as inﬁnite dat a,
+time, and space. As such, both language acquisition and sci-
+entiﬁc discovery are traditionally employed and vastly ex-
+plored for the purpose of illustrating and inspiring FLT.
+Some authors, such as Koestler (2014), argue that cre-
+ativity has a major role in tasks like language acquisition
+and scientiﬁc discovery, often seen solely as learning. How -
+ever, others ﬁnd this hard to accept, as Ritchie (2007, p. 69)
+suggests: “Mathematics, science, or engineering are rarel y
+classed as creative unless they are done exceptionally well .
+This bias does not seem helpful in a rigorous attempt to pin
+down the notion of creativity, particularly when applied to
+machines. Although there is still a tendency within AI to tac -
+itly accept this intellectual apartheid of creative versus non-
+creative activities, it would be better if we could be more
+neutral in our formal characterisation of creative actions .”We believe that some ideas in FLT could have a useful
+purpose for creativity studies, especially in structuring and
+formalizing matters. Our exploration of this theory is an at -
+tempt at formalizing concepts in Computational Creativity
+(CC), following a series of similar attempts that are based
+on other theoretical ﬁelds such as: the early developments
+by Wallas (1926), Rhodes (1961) and Guilford (1950);
+Boden’s (1994) ideas and their subsequent examination by
+others such as Bundy (1994) and Ritchie (2006); Wiggins’
+(2019) progress at bringing extra rigour to Boden’s (2004)
+proposal; Schmidhuber’s (2010) project to formalise cre-
+ativity; Colton, Charnley, and Pease’s (2011) proposal of
+Computational Creativity Theory; Ventura’s (2011) adapta -
+tion of the “No Free Lunch Theorem”; Shannon’s Informa-
+tion Theory use by Varshney (2019, 2020) and the approach
+to Kolmogorov Complexity by Mondol and Brown (2021).
+In this paper, our goal is three-fold: 1) to introduce the
+ideas behind FLT; 2) to provide formal deﬁnitions for some
+creativity-related terminology, inspired in FLT; 3) to sho w
+how these formal deﬁnitions allow to explore and demon-
+strate results about creativity, by exploring the effectiv e role
+of novelty in transformational creativity (Boden, 2004).
+The Endless Explanation of “Grey Music”
+In this section, we present an anecdote, a scenario, that set s
+the stage for our explanation of FLT, by illustrating the fou n-
+dational concepts within the context of a creative domain
+and highlighting some important aspects. Since FLT is ag-
+nostic and applicable across domains, this anecdote could
+pertain to any creative domain and still illustrate the theo ry
+as effectively. Besides, adapting it for other domains shou ld
+be easily achievable. We chose the music domain and titled
+our anecdote: The Endless Explanation of “Grey Music”.
+Our story begins with a vinyl shop assistant and his
+client1, as they embark on a journey around a musical genre
+known as grey music , in a world where intensional deﬁni-
+tions are avoided. The anecdote revolves around the client’ s
+1FLT is agnostic in terms of what is considered a data provider
+(client) and a learning agent (assistant). One can think of a ny data-
+provider in place of the client such as a critic, an audience, na-
+ture, or the assistant himself, and any data-consuming/hyp othesis-
+producing entity in place of the assistant like a scientists , a ma-
+chine, a team of people. While important for generalization , this
+ﬂexibility can be overly complex for this introduction.extensional description of what she wants for a song and the
+assistant’s efforts to understand this musical genre, whic h is
+as mysterious to the assistant as it is clear to the client.
+After acknowledging that the assistant has no idea of what
+grey music , the musical genre, is, the client proceeds to in-
+dicate songs: ‘You know, “Le Freak” by Chic. That is grey
+music !’2. The client is determined to share every single grey
+music song, even if there are inﬁnitely many, to ensure the
+assistant gets it exactly correctly, no more no less, the sam e
+way she does. Therefore, she will exhaustively exemplify
+grey music , and every time she mentions a song, the assis-
+tant may reﬁne his understanding of the term, adjusting his
+conceptualization of grey music and creating different sets
+of rules to represent their evolving comprehension.
+The never-ending part of this story arrives when we un-
+derstand that if this genre is big enough, i.e., inﬁnite, and the
+motivations of the client and assistant never fade then they
+would be able to stay this way forever. The client can never
+be certain whether the assistant have the exactly correct co n-
+ceptualization of grey music simply by analysing any ﬁnite
+amount of songs suggested by the assistant given his cur-
+rent understanding of the term – we will term this situation
+in which the client lacks direct access to the assistant’s cu r-
+rent conceptualization as the “evaluator conundrum”. Thus ,
+the client keeps forever providing examples, wholly inde-
+pendent of the assistants’s understanding3. Meanwhile, the
+assistant also is perpetually uncertain about the exaclty c or-
+rectgrey music ’s essence since he only has access to the ex-
+amples and nothing more – to this other condition we will
+call the “learner conundrum” – and has no capacity to inter-
+vene in the data that is provided. By indeﬁnitely proceeding
+the same way, they get stuck in an endless loop:
+• the client keeps on exhaustively exemplifying grey music
+uncertain if the assistant captured it exactly correctly;
+• the assistant keeps on trying to acquire the exactly cor-
+rect conceptualiation for the genre of grey music , pass-
+ing through several hypothetical genres, but without ever
+knowing if has matched the client’s idea exactly correctly.
+Contrasting with practical research, this kind of thought
+experiments provide us – as external observers – direct ac-
+cess to both the client’s and shop assistant’s minds. There-
+fore, despite their conundra, we can determine whether
+they will ever successfully converge to precisely the same
+genre or not. FLT takes advantage of this fact to theo-
+retically explore which learning strategies enable assist ants
+to to achieve success within various environments, seek-
+ing to understand the nuanced dynamics between different
+approaches and the contexts in which they are most effec-
+tive. Additionally, this method also allows for the study of
+whether there are genres that are impossible to discern apar t.
+2Given this single example the reader might already feel the
+urge to trying to unravel what grey music means. This illustrates
+human’s predisposition to create these structures.
+3Most FLT results assume the premise of passive learning,
+where the learner observes data without the capacity of inte rvening.
+Opposedly, active learning allows the learner to experimen t and the
+data will change according to those actions. This dicothomy is dif-
+ferent than the one between implicit vs deliberate learning .An Introduction to Formal Learning Theory
+E. Mark Gold (1967) presented the ﬁrst theoretical re-
+sults that became the foundations of a formal framework
+to study inductive learning. Building on these results,
+Blum and Blum (1975), Angluin (1980), Case and Smith
+(1983) and Case (2012), as well as several other authors,
+developed a set of other deﬁnitions and results that describ e
+limits on what one learner can learn. We call the collection
+of such deﬁnitions and results, FLT, which we now intro-
+duce. In this introduction, we reproduce a slight adaptatio n
+of some of the content in the comprehensive review of FLT
+made available by Jain et al. (1999). For the sake of clar-
+ity and ease of reference, we decided to compile this set
+of deﬁnitions under a common name: Scientist Identifying
+Languages in Texts (SILIT). This represents what we con-
+sider to be the most basic framework presented in this area
+that will serve as the basis for other possibly more intricat e
+adaptations and extensions.
+Learning Paradigm
+The anecdote presented illustrates ﬁve components that can
+be found in any empirical inquiry paradigm (Jain et al.,
+1999) and are thus formalized in SILIT:
+• a class of possible realities : In our anecdote, this pertains
+to all potential music genres, abstracted as sets of songs.
+• intelligible hypotheses : These refer the way to represent
+the music genre that the assistant is thinking of at each
+moment. This corresponds to the set of rules the assistant
+produces to represent his hypothetical reality.
+• the extensive data available about the correct reality: The
+data in our anecdote are the songs provided by the client.
+• alearner : This is anything that can turn data into hy-
+potheses, which corresponds to our assistant; and
+•criteria for success: In our case, we aim at what we des-
+ignated as matching “exactly correctly”, i.e., the assis-
+tant’s conceptualization perfectly aligns with the client ’s,
+including no additional songs nor omissions. Various al-
+ternative criteria are explored in different extensions.
+Notation and Terminology
+Here, we introduce some notation, primarily drawn from
+the theory of computation, thoroughly explored by Rogers
+(1967). We denote the empty set as ∅, whileNrepresents
+the set of natural numbers. In this paper, Aencompasses the
+set of all conceivable sentences within a chosen alphabet,
+which serves as potential inputs for programs pwritten for a
+selected Turing-equivalent algorithmic system. We will us e
+Pto denote the set of all those possible programs. Within our
+notation, Wpsigniﬁes the domain of the computable func-
+tion expressed by program p. So, the statement L=Wp
+readspis a (discriminative)4grammar for set L. Thus, ev-
+ery program p∈Pis a grammar for exactly one set L⊆A.
+4Discriminative grammars oppose to generative grammars.
+Discriminative use the domain in their deﬁnition and can be u sed
+directly to semi-decide what sentences are well-formed. Ge nera-
+tive can be used to always output a well-formed sentence.Turing’s (1937) results imply that not all sets of sentences
+have grammars, but those that do have a grammar always
+have a Turing machine that lists all its members. Then, we
+say that those sets which have grammars are therefore re-
+cursively enumerable (r.e.) sets5and we denote the class of
+such sets by E, and we can thus write E={Wp|p∈P}.
+Scientists Identifying Languages in Texts
+We designate SILIT to address what we consider to be the
+most basic set of deﬁnitions among the several introduced by
+Jain et al. (1999). It is arguably the most basic framework in
+FLT, that can be expanded, adapted, and appropriated to in-
+clude other kinds of interesting aspects. This framework as
+well as its variations are different ways to formalise the ﬁv e
+components that we ﬁnd in any empirical inquiry paradigm.
+Similarly to many other ideas in the theory of computation,
+the terminology revolves around languages and sentences,
+to directly model language acquisition.
+We will start by formalizing the class of possible reali-
+ties, whose formalisation was directly borrowed from com-
+putability theory. Since the learner must be able to point at
+speciﬁc sets of things, for example, songs or sentences, one
+way is to allow our learner to produce intrinsical deﬁnition s
+for those sets. Using programs we can actually have a ﬁ-
+nite representation for potentially inﬁnite sets. Thus, in this
+framework, a possible reality is a r.e. set6, also designated
+as a language, L∈E. So, in context of SILIT:
+Deﬁnition 1 - Language (Reality). A language or a (possi-
+ble) reality is a recursively enumerable set, L∈E. A class
+of languages will be represented by symbol L⊆E.
+Following this strategic choice, the hypotheses, i.e., the
+way the learner intrinsically represents these realities, can
+be abstracted using grammars, or in other words, computer
+programs, p∈P7. These will be the output of the learner
+when presented with data. Then every possible reality has at
+least one corresponding hypothesis and every hypothesis as
+exactly one reality to which it corresponds.
+Deﬁnition 2 - Grammar (Hypothesis).
+(a)Grammar . In this framework, a grammar, a hypothesis
+or a conjecture is a program, p∈P.
+(b)Language corresponds to a grammar . A language Lis
+said to correspond to a grammar pif and only if L=Wp.
+We address now how this framework models the data col-
+lected from one speciﬁc ﬁxed reality. To faithfully emulate
+this way of learning, we must ensure that the learner only ac-
+cesses the correct reality indirectly through extensional data,
+i.e., we need to model the learner conundrum by creating a
+singular interface between the learner and the correct real ity.
+One simple way to represent data is to consider an inﬁ-
+nite sequence of positive examples encompassing all mem-
+bers of the set – an exhaustive representative dataset. In th is
+5The term r.e. set is usually applied to sets of natural number s
+and not sentences, yet this is equivalent and simpler.
+6There are alternative frameworks to learn functions rather than
+sets. Yet, the latter is more general and interesting for cre ativity.
+7In FLT these are represented using natural numbers by em-
+ploying G¨ odel numbering as an index.area, this list-like representation of all the elements of a set
+is termed as ‘text’, since this would correspond to an actual
+text with all the sentences that could be written in a lan-
+guage. In the same way, the words in a text do not change
+based on what a reader is thinking, this structure is also in-
+dependent of what the learner is outputting and may include
+repetitions or even blank spaces, points of null data. In our
+case, it will be an inﬁnite sequence of sentences that belong
+to the chosen reality, without missing one. We also include
+an extra symbol, #, that represents the inexistence of data.
+Deﬁnition 3 - Text (Data).
+(a)Text. A text Tis a mapping N→A∪{#}. This can
+and will also be equivalently interpreted and noted as an
+inﬁnite sequence x0,x1,x2, . . .of sentences where some
+might be null, #, instead.
+(b)Content of a text . The sentences appearing in this se-
+quence are denoted content(T) =range(T)−{#}.
+(c)Text exhaustively exempliﬁes a language . A textTis
+said to exhaustively exemplify a language L∈Ein case
+content(T) =L. In some literature, this reads Tis forL.
+(d)Text operators . Given a text Tandn∈N, thenT(n)
+represents the n+1thmember of T, whileT[n]represent
+the initial ﬁnite sequence of length n, known as preﬁx.
+(e)Preﬁx operators . Preﬁxes are represented using the fol-
+lowing symbols: σ,τ. The length of preﬁx σis denoted
+|σ|, the concatenation of preﬁxes writes σ⋄τand the re-
+maining notation and operators for texts (content, preﬁxes
+and indexing) deﬁned in Def 3.(d), also apply to preﬁxes.
+(f)The set of all set preﬁxes . The set of all preﬁxes is writ-
+tenSEQ={T[n]|Ta text and n∈N}.
+Notice that for each language Lthere are inﬁnite many
+texts, except for the empty set ∅which only accepts one sin-
+gle text, namely, T∅such that ∀x∈NT∅(x) =#. For example,
+the following three texts all exhaustively exemplify the re al-
+ity of the sentences representing even numbers:
+2, 4, 6, 8, 10, 12, 14, 16, 18 . . .
+#, 2, #, 4, 4, #, 6, 6, 6, # . . .
+#, 2, 6, 4, 10, 8, 14, 12, 18 . . .
+We are now in a condition to formalise the idea of learner,
+or scientist, as they are called in this area. We want some-
+thing that given partial ﬁnite data outputs a hypothesis.
+Deﬁnition 4 - Scientist (Learner).
+(a)Scientist . A scientist is a function M:SEQ→P.
+(b)Scientist conjectures reality . LetTbe a text and n∈N,
+then a scientist Mis said to conjecture the language Lon
+preﬁxT[n]if and only if WM(T[n])=L, i.e., if scientist
+Moutputs a grammar for Lwhen given as input the initial
+sequence of length nfromT.
+It is essential to note that this deﬁnition of scientist is
+notably broad, encompassing even scientists that can never
+be implemented in computers, i.e., uncomputable scientist s.Such wide-ranging deﬁnition was crucial to drawing conclu-
+sions regarding the computability of learning since it faci li-
+tated the comparison of the learning limitations of this bro ad
+class of scientists with those limitations encountered whe n
+considering exclusively computable scientists. We procee d
+to present one criterion that assesses the success of a scien -
+tist in a given text: identiﬁability.
+Deﬁnition 5 - Identiﬁcation (Criterion). LetMbe a scien-
+tist andTa text, respectively.
+(a)Convergence on a text .M(T)↓=p, reading Mcon-
+verges to ponT, if and only if for all but ﬁnitely many
+n∈N, we have M(T[n]) =p. IfMdoesn’t converge to
+anypthen we write M(T)↑, reading Mdiverges in T.
+(b)Text identiﬁcation .Mis said to identify Tjust in
+case there is a psuch that M(T)↓=pandWp=
+content(T), i.e., just in case Mconjectures the language
+L=content(T)on all but ﬁnitely many preﬁxes of T.
+(c)Language identiﬁcation .Mis said to identify the lan-
+guageL∈Ejust in case Midentiﬁes every text for L.
+(d)Identiﬁcation of a classes of languages . LetL⊆Ebe
+given.Midentiﬁes Lif and only if it identiﬁes all L∈L.
+Then,Lis said identiﬁable in case there is a scientist that
+identiﬁes it; it is said to be unidentiﬁable otherwise.
+Several critical observations regarding this deﬁnition of
+identiﬁcation need to be considered. Firstly, it is crucial
+to notice that, according to the deﬁnition, to identify a lan -
+guage,L, the scientist needs only to identify all the texts for
+the given language, without restrictions about what happen s
+in other texts. Thus, in FLT, only the identiﬁability of clas ses
+of languages is worth discussing, since discussing the iden -
+tiﬁability of singular languages is rendered superﬂuous, a s
+every given single language L∈Eis trivially identiﬁed by
+at least one scientist: the scientist that regardless of its input
+constantly outputs p∈P, such that pis the smallest gram-
+mar forL. We will name such a scientist a dumb visionary
+(Def 6). Such broad deﬁnitions expand the ideas of both
+“learner” and “learning” to include these very dumb or stub-
+born behaviours, which becomes very useful to prove results
+but obviously raises criticism against this framework in wh at
+concerns its ﬁdelity and capacity to model real learning be-
+haviour. The ﬁeld addresses these criticisms by extending
+the framework, redeﬁning one or more of these components
+while being guided by already proven results.
+Deﬁnition 6 - Dumb Visionary. Given a language L, the
+dumb visionary for L, writtenDVL, is deﬁned as the scientist
+that, regardless of its input, constantly outputs the minim um
+programp∈Psuch that Wp=L.
+One simple interesting result from the FLT ﬁeld is that
+scientists that can be agnostic about the time they have con-
+verged, i.e., they are not imposed to announce their conver-
+gence, can identify more classes of languages than those im-
+posed to announce their convergence. This and other intrigu -
+ing results could be proved within this framework, yet in thi s
+text, we need to move on to discussing this theory inside the
+context of CC. In this new context, the shop assistant can be
+replaced by a professional composer, yet no consequences
+of this change will actually be explored in this early work.Towards Formal Creativity Theory
+The deﬁnitions previously discussed were initially devel-
+oped focusing on the learning component of language and
+science. We believe that these deﬁnitions can be refurbishe d
+to provide a more rigorous view on CC concepts and pos-
+sibly a new formalization to explore creativity in a purely
+theoretical way. Thus, the initial goal of this section is to ex-
+amine some creativity-related terms through the lens of the
+previously provided deﬁnitions. We shortly introduce some
+concepts from the canonical literature of CC, and what we
+consider could be their formal reinterpreted deﬁnition und er
+the lens of FLT. Some of these terms are essentially renames
+of structures from FLT. We believe that the process of re-
+naming has been instrumental in generating new concepts
+since it facilitates a clearer understanding. We think of th e
+set of these deﬁnitions as the beginning of a ﬁeld that, by
+parallelism, we designate Formal Creativity Theory (FCT).
+Artefacts
+The seminal work by Rhodes (1961), proposing the four P’s
+of creativity, introduces the idea of ‘Product,’ also tradi tion-
+ally referred to as artefact, as one of the main components of
+creative behaviour. For our purposes, we conceptualize an
+artefact as being represented by a sentence, or, equivalent ly,
+we redeﬁne Aas the set of all possible artefacts. This allows
+us to abstract and generalize our results across domains, bu t
+also pushes this theory away from practical research.
+Deﬁnition 7 - Artefact. A product, an artefact (or a concept)
+is any member a∈A, the set of all possible artefacts.
+Experience and Fate Sequences
+While exploring the concept of ‘preﬁx’ in the context of a
+creative scenario, it corresponds to the experience that an
+agent has access to in a given moment. Therefore, in this
+context, we decided to provide another term to refer to this
+structure: ‘experience sequence’. This refers to the cumu-
+lative and ordered ﬁnite list of an individual’s prior singu lar
+experiences with various artefacts. If we have an inﬁnite
+list, i.e., a text, as we call it in FLT, we will call it a ‘fate s e-
+quence’ in FCT. While a scientist can undergo an experience
+sequence, they can never totally undergo a fate sequence.
+Deﬁnition 8 - Experience and Fate Sequences. An experi-
+ence (sequence) is a preﬁx, σ∈SEQ , that can be undergone
+by scientist. A fate (sequence) is the same as a text, T.
+Situation
+We decided then to deﬁne ‘situation’ as a pair consisting of
+a scientist and an experience. Despite not being a common
+idea in CC, we believe that formalizing this component as a
+pair is crucial for later analysis, especially when conside ring
+properties of an artefact that depend on the experience, the
+scientist, or the interaction between the two.
+Deﬁnition 9 - Situation. A situation sis any ordered pair
+s= (M,σ)withMa scientist and σan experience. We use
+Sto represent the class of all situations.Conceptual Spaces
+Conceptual spaces have been commonly discussed in CC
+(Boden, 2004; Gardenfors, 2004), even though sometimes
+with different meanings. We propose to formalize a con-
+ceptual space as a r.e. set, i.e., any set of artefacts that ca n
+be intentionally deﬁned (Def 10). This way, any program
+over artefacts deﬁnes a conceptual space and all of these can
+be intentionally deﬁned using a hypothesis. This deﬁnition
+aligns with Ritchie’s (2006) idea of conceptual space8. Fur-
+thermore, we wish to distinguish three special kinds of con-
+ceptual space: the inspiring set, the hypothetical concept ual
+space, and the platonic conceptual space.
+Deﬁnition 10 - Conceptual Space. A conceptual space is
+any r.e. set, A∈E.
+Inspiring Sets
+According to Ritchie (2007, p. 76), in CC the “construction
+of the program is inﬂuenced (either explicitly or implicitl y)
+by some subset of the available basic items (...) which we
+will call the inspiring set.” Following the deﬁnitions from
+FLT, it seems logical to deﬁne the inspiring set based on
+what is available to the scientist, i.e., experiences. Then , we
+have that the inspiring set is precisely the unordered con-
+tent of the experience sequence (Def 8). The set and the se-
+quence are then two different ways to represent inspiration ,
+the latter allowing repetitions, while the former does not.
+Deﬁnition 11 - Inspiring Set. Letσbe an experience, then
+we also call content(σ), the inspiring set, written Iσor just
+Iwhen the preﬁx is not ambiguous.
+Hypothetical Conceptual Spaces
+This concept is not commonly found in CC literature. In-
+stead, it resulted from the exploration of creativity throu gh
+the lens of FLT. A hypothetical conceptual space, H, is any
+conceptual space conjectured by a scientist (Def 12). We
+see then that a situation s∈Stotally deﬁnes a hypothetical
+conceptual space9. Additionally, given a fate, we have an
+inﬁnite sequence of hypothetical conceptual spaces.
+Deﬁnition 12 - Hypothetical Conceptual Spaces. Lets=
+(M,σ)be a situation, then we say that Hs=WM(σ)is the
+hypothetical conceptual space associated with that situat ion,
+i.e., it is the conceptual space conjectured by scientist M
+when undergoing σ.
+In FLT, there is a branch dedicated to studying the impli-
+cations of assuming certain relationships between the hypo -
+thetical conceptual spaces and the corresponding inspirin g
+sets. For example, a consistent scientist is any scientist s uch
+that for any situation s= (M,σ)we have that Iσ⊆Hs10.
+8Ritchie (2006) suggests that the term ‘artefact-set’ corre sponds
+to the set that actually contains artefacts, which we simply call the
+conceptual space, and the term ‘space-deﬁnition’ to the int entional
+deﬁnition of this set, which we call the hypotheses or the rul es of
+the conceptual space, as mentioned later in this text.
+9Non-total scientists that are not deﬁned in all experiences are
+possible, allowing to model indecision but adding extra com plexity.
+10These and other kinds of constraints imposed on scientists a re
+considered a type extension to the SILIT known as strategies .Platonic Conceptual Space
+The platonic conceptual space, P, is the correct reality
+among the possible ones, the conceptual space that origi-
+nates a given fate. Conceptually, changing the platonic con -
+ceptual space means considering an alternative reality. Th e
+fate, the inﬁnite sequence of artefacts the scientist will e xpe-
+rience, is always congruent with a given platonic conceptua l
+space and contains all of its elements11. The fate, then, rep-
+resents the sequence that encompasses all the artefacts the
+scientist will ever have access to while trying to guess P.
+Deﬁnition 13 - Platonic Conceptual Space. Given a fate T,
+the platonic conceptual space, P, with which Tis congruent,
+is such that P=content(T).
+Paraphrasing the previously deﬁned criterion for identiﬁ-
+cation (Def 5.(b)), a scientist is said to identify a fate, T, if
+and only if in all but ﬁnitely many experiences of T, the hy-
+pothetical conceptual space is the same as the platonic con-
+ceptual space12. Also, a collection of platonic conceptual
+spaces is identiﬁable if, for each one Pof these, there is a
+scientist capable of identifying all fates congruent with P.
+In the anecdote, the platonic conceptual space corresponds
+to the client’s idea of ‘grey music’ and the hypothetical con -
+ceptual spaces to the several hypothetical genres the assis -
+tant goes through after each provided song.
+Rules
+In the Creative Systems Framework (CSF), Wiggins (2019)
+presents three sets of rules - R,T,E. These rules play dif-
+ferent roles in the creative process - the ﬁrst one is used to
+deﬁne the boundaries of a special conceptual space, the sec-
+ond is used to generate new artefacts and the last one is used
+to choose the artefacts with value. While both the ﬁrst and
+third are used to distinguish artefacts that belong to a spec iﬁc
+conceptual space or those that are valuable, respectively, the
+second one provides an ordered sequence of artefacts. In
+SILIT, the notion of hypothesis corresponds to the implicit
+representation of a language. Seems appropriate, then, to
+correspond such sets of rules to hypotheses (Def 14), de-
+spite some being used to decide and others to enumerate. In
+the future, we intend to explore CSF-aligned scientists, th at
+output 3 sets of rules, pR,pTorpE, instead of just one.
+Deﬁnition 14 - Rules. A set of rules is a program, p∈P.
+Properties
+In traditional FLT, various extended models for data (envi-
+ronments), classes of learners (strategies), and success c ri-
+teria (criteria) are explored. Yet, to our knowledge, there
+is close to no exploration of how these can take advantage
+of the properties of the artefacts, perhaps due to abstracti on
+complexity. Conversely, in CC literature, it is a common but
+not exclusive viewpoint that a creative act is characterize d by
+11FLT includes other structures that consider other relation ships
+betweenPandT- a type of extensions named environments - ac-
+counting for missing data, wrong data, or additional inform ation.
+12The last kind of extension is to consider alternative succes s
+criteria to simulate approximate learning or indecision.a process yielding creative artefacts. Therefore, many of t he
+efforts in CC wander around artefacts and their properties.
+Several have then been the properties proposed as desider-
+ata to discern creative artefacts, such as novelty, typical ity,
+value, quality or even surprise.
+We propose to include ‘property extensions’ to FCT as a
+new extension type. This new kind of extension enables the
+creation of new paradigms, by constraining the class of sci-
+entists based on these properties, or just by employing dif-
+ferent criteria that deﬁne success based on such properties .
+Due to space limitations, we do not fully detail how prop-
+erties can alter the basic paradigm but will brieﬂy introduc e
+two formal properties and some conclusions.
+Schema
+To implement this extension, we adapt the idea of ‘rating
+schemas’, proposed by Ritchie (2007), that correspond to
+operators that can be applied to artefacts. While Ritchie
+(2007) implements schema ratings as fuzzy sets, for simplic -
+ity, in this initial approach to CC using FLT, we suggest to
+have schemas as predicates (Def 15). Similarly to Wiggins’
+(2006) dichotomic evaluation rules, E13, this simple imple-
+mentation allows for only two states of value: valuable arte -
+facts and non-valuable artefacts. Despite facilitating th eory,
+this simplicity-driven design choice can raise criticism, since
+our ﬁndings may not apply to alternative rating schema mod-
+els that might be more accurate. However, it aligns with FLT
+methodology: proving results for a simpliﬁed model ﬁrst,
+then extending to more complex versions, with insights from
+the simpler approach facilitating subsequent proofs.
+Deﬁnition 15 - Schema. A (dichotomic rating) schema Vis
+just any predicate over artefacts, V:A→{0, 1}. An artefact
+ais then said to be V-valuable if V(a) =1.
+According to this deﬁnition, any predicate over artefacts
+can be interpreted as a schema, regardless of the domain,
+allowing for uncomputable schemas that can never be com-
+pletely correctly grasped in a conceptual space. Yet, a set
+of rules for a conceptual space can always be used to build
+a schema. In this study, we decided to focus on schemas
+parameterized by an experience and a scientist. We provide
+next the working deﬁnitions of one well-known and widely
+used property of artefacts from CC - novelty, VN- as well
+as introduce a new one - transformativeness, VTr- relating
+to transformational creativity (Boden, 2004).
+Novelty
+While properties such as complexity or typicality have been
+debated as necessary components for creativity, novelty ha s
+increasingly been agreed as one main one, to the point that
+creativity has been seen as the “production of novel, use-
+ful products” (Mumford, 2003, p. 110). Wiggins (2006,
+p. 25) deﬁnes novelty as “the property of an artefact (ab-
+stract or concrete) output by a creative system which arises
+from prior non-existence of like or identical artefacts in t he
+context in which the artefact is produced.” We deﬁne that an
+13Though Wiggins focuses on predicates, he mentions in the pa-
+per the potential for extending his proposal to fuzzy sets.artefactais novel, given an inspiring set Iσ, ifa /∈Iσ. De-
+spite this being a reductionist notion of novelty, it allows to
+derive interesting results when paired with other properti es.
+Deﬁnition 16 - Novelty. NoveltyVNis a schema parame-
+terized by a situation s= (M,σ). An artefact ais said to be
+novel in situation s, writingVN(a,s) =1, iffa /∈Iσ.
+We can see that a scientist can compute this value metric
+since it only depends on the experience. This means that the
+scientist can access the true value of this schema. This is
+not true for all schemas, as there are schemas that can only
+be approximated by the scientists, which will be the case
+for the next schema. Since our model of these schemas is
+parameterized, we can see that novelty is not intrinsic to an
+artefact, it depends on the experience provided to a scienti st.
+It makes no sense then to evaluate this predicate out of the
+context of a speciﬁc situation.
+Transformativeness
+Following Boden’s (2004) proposal of different kinds of
+creativity - exploratory, combinational and transformati onal
+creativity - more common than not, research in CC is in-
+ﬂuenced by the “widely discussed proposal by Boden that
+high levels of creativity result from the transformation of a
+conceptual space” (Ritchie, 2006, p. 242). Wiggins (2019,
+p. 31) paraphrases Boden’s transformational creativity as
+“the kind of creative behaviour concerned (. . . ) with trans-
+forming the rule set” that deﬁnes a conceptual space.
+The interplay between transformational creativity and
+learning is inherently complex and deeply interconnected.
+Through analyzing hypothetical scenarios of creative be-
+haviour, we identiﬁed two main cases for the relationship
+between learning and creativity: one where learning pre-
+cedes exploration, akin to the preparation phase described
+by Wallas (1926); and another where learning occurs during
+exploration, aligning with what Wiggins (2019) describes a s
+transformational creativity. When analyzing real cases, d is-
+tinguishing when exploration begins and preparation ends
+become subjective, so one can only differentiate transfor-
+mational creativity from well-prepared exploratory creat iv-
+ity by ﬁxing a starting point for the exploration process.
+Generalizing Wiggins’ (2019) idea of transformational
+creativity as changing an intentional representation, and re-
+lating it to how scientists learn in FLT, we say that trans-
+formational creativity happens whenever a scientist chang es
+their hypothesis in a growing experience. Formally, we ob-
+serve transformational creativity if a scientist outputs h1
+from experience σ1, and then generates a different hypothe-
+sish2when undergoing σ1⋄a. Not all artefacts will trigger
+such shift in a speciﬁc situation. Those which do are said
+transformative, a property we named ‘transformativeness’ .
+Deﬁnition 17 - Transformativeness. Transformativeness
+VTris a schema parameterized by a situation s= (M,σ).
+An artefact ais said to be transformative in situation s, i.e.,
+VTr(a,s) =1, iffM(σ)/ne}ationslash=M(σ⋄a).
+This is, to the best of our knowledge, the ﬁrst formal pro-
+posal to deﬁne transformational creativity that allows to d i-
+rectly compare with other properties such as novelty.Preliminary Results
+Novelty has been widely discussed in Computational Cre-
+ativity as a mandatory requirement for creative behaviour.
+The common way to study this aspect then became to study
+what makes a product novel and ﬁnd search strategies that
+could increase the likelihood of novelty. Yet, one other as-
+pect of novelty we can study, given these new deﬁnitions,
+is its relationship with other properties such as transform a-
+tiveness. We aim to study how experiencing novel artefacts
+affects learning or, in our case, how it affects creativity -
+namely how necessary it is for transformational creativity
+(Boden, 2004). It is unspokenly assumed that novelty is
+needed for transformational creativity to happen. This is
+yet another reason for novelty being valued in creativity -
+because novel artefacts are assumed to impact conceptual
+models. We prove here that if we consider the general class
+of scientists, it is wrong to assume that there is a relation-
+ship between novelty and the transformation of conceptual
+spaces! We prove that, in this wide class of agents, there is
+no such relationship and we illustrate the results using ex-
+amples. We then show that for a sub-class of scientists, it is
+correct to assume such a relationship.
+Novelty is not sufﬁcient for Transformativeness
+Could it be that all pieces of novel information will always
+make one change their mind? In this framework, we can de-
+ﬁne scientists that defy such assumption. Actually, we have
+inﬁnitely many scientists that break such statement, some
+very trivial, others more complex.
+Theorem 1. Artefactabeing novel in situation sdoes not
+implyais transformative in that same situation.
+Proof . We will provide a situation sand an artefact asuch
+thatais novel but not transformative in situation s. Suppose
+Mhis a constant scientist, i.e., there is constant h∈N, such
+that for every σ∈SEQ ,M(σ) =h. An example of such
+kind of scientists is what we deﬁned as dumb visionaries
+DVA(Def 6). Now, suppose a situation s= (Mh,σ)with
+a ﬁxedσ∈SEQ . Suppose as well any artefact asuch that
+a /∈Iσ. Suchamust exist since Iσis always ﬁnite due to the
+ﬁnitude of σ, i.e., independently of the chosen experience
+there is always at least one novel artefact. By deﬁnition,
+we see that the chosen ais novel in s, yetM(σ) =h=
+M(σ⋄a), henceais not transformative. /squaresolid
+As this proof shows, we showcase scientists for whom
+novelty alone is insufﬁcient to alter their ideas. Even thou gh
+these seem very simple scientists, we can build more com-
+plex scientists that would prove such a theorem, such as
+any scientist who identiﬁes an inﬁnite language. If nov-
+elty was sufﬁcient to make any scientist change their opin-
+ion, then any fate for an inﬁnite platonic conceptual space
+would have inﬁnite points of transformation and therefore
+no scientist could ever identify it. Yet, we think the sim-
+ple scientists provided in the proof illustrate well the arg u-
+ment in point, since despite their triviality these simple s ci-
+entists still identify one platonic conceptual space. We ca n
+compare these to people with unjustiﬁed beliefs who are im-
+mune to any kind of evidence, yet can be, by chance, right insome cases/realities, and that despite novelty they will ne ver
+change their beliefs.
+Novelty is not necessary for Transformativeness
+Maybe even more surprising is that, within these deﬁnitions ,
+novelty is also not required for transformativeness. Trans -
+formativeness can occur in situations and artefacts that fa il
+to meet the novelty criterion.
+Theorem 2. Artefactabeing transformative in situation s
+does not imply ais novel in that same situation.
+Proof . In this case, we need to provide a situation sand
+an artefact asuch that ais transformative but not novel in
+situation s. Suppose M′is an ever-changing scientist, i.e.,
+M′(σ)/ne}ationslash=M′(σ⋄b)for every σandb. An example of
+such a scientist is a scientist whose output depends only on
+the size of the experience, such as M′(σ) =|σ|Suppose a
+situations= (M′,σ)for ﬁxedσ∈SEQ butIσ/ne}ationslash=∅. Let us
+choose an artefact such that a∈Iσ. We see that the chosen
+ais not novel, because we explicitly chose something that
+was already experienced by the scientist, yet our scientist
+changes always their hypothesis when his experience grows
+soM(σ)/ne}ationslash=M(σ⋄a)henceais transformative. /squaresolid
+Once again, these are very trivial scientists. These, con-
+trary to the constant ones, are actually not able to identify
+anything. A more complex and more realistic example to
+prove such a result would be a scientist that annotates how
+conﬁdent it is in its hypotheses by appending a comment to
+the hypotheses. If the artefact matched its hypotheses then
+it would increase the conﬁdence by one point, otherwise it
+would decrease the conﬁdence or even make it change com-
+pletely if conﬁdence reached zero. Such scientist is by def-
+inition ever-changing and therefore also proves the theore m
+above, for syntactic transformativeness. This scientist c an
+converge semantically and can be used to identify using an
+expansion to the identiﬁcation criterion previously prese nted
+- behaviourally correct identiﬁcation.
+For Set-Driven Scientists, Novelty is necessary for
+Transformativeness
+A scientist is said to be set-driven if for σ,τ∈SEQ , if
+content(σ) =content(τ)thenM(σ) =M(τ). A “set-driven
+scientist is insensitive to the order in which data are prese nt”
+(Jain et al., 1999, p. 99). We will prove that for these sci-
+entists, novelty is a requirement for transformativeness. We
+have two conditions:
+1.Condition 1 : for scientist Mandσ,τ∈SEQ ,
+content(σ) = content(τ)=⇒M(σ) =M(τ), i.e., us-
+ing inspiring set notation, Iσ=Iτ=⇒M(σ) =M(τ)
+2.Condition 2 : for artefact aand situation s= (M,σ),
+VTr(a,s)=⇒VN(a,s)
+Theorem 3. Condition 1 is sufﬁcient for Condition 2 , i.e.,
+if a scientist is set-driven then novelty is necessary for tr ans-
+formativeness in that same situation.
+Proof . Let us start by assuming Condition 1 , i.e., let M
+be a set-driven scientist. So given any artifact a, and anyexperience σ, we have Iσ=Iσ⋄a=⇒M(σ) =M(σ⋄a).
+This means the contrapositive M(σ)/ne}ationslash=M(σ⋄a)=⇒
+Iσ/ne}ationslash=Iσ⋄a. Thus for any situation s= (M,σ), we have then
+thatVTr(a,s)=⇒Iσ/ne}ationslash=Iσ⋄a. In turn, Iσ/ne}ationslash=Iσ⋄a=⇒
+(Iσ−Iσ⋄a/ne}ationslash=∅∨Iσ⋄a−Iσ/ne}ationslash=∅). Additionally to the
+previous one, we prove now two sub-results. A) From the
+deﬁnitions of inspiring set and ⋄, we know that for any σ,τ
+we have that Iσ⊆Iσ⋄τ, then, we always have also that
+Iσ−Iσ⋄τ=∅. B) Similarly, for any σ,τ∈SEQ , it is always
+true thatIσ⋄τ−Iσ⊆Iτ, thusIσ⋄a−Iσ⊆{a}. Given the
+last three results, we may conclude that Iσ⋄a−Iσ={a},
+and that therefore a /∈Iσ, that corresponds to our deﬁnition
+of novelty, VN(a,s), so we reached Condition 2 ./squaresolid
+The consequences of this theorem are signiﬁcant. At ﬁrst
+glance, we see that it is appropriate to assume that novelty i s
+actually necessary for transformational creativity when c on-
+sidering set-driven agents such as those based on the inspir -
+ing sets proposed by Ritchie (2007). Yet, on a second look
+we may also conclude that assuming such set-driven prop-
+erties seems to constitute a big change in the paradigm, im-
+plicating several other assumptions and changing drastica lly
+the way creativity is modelled. We believe it is of the most
+relevance to understand the implications and consequences
+of such assumptions. This can only be achieved by formal
+studies and bringing clarity to how these assumptions relat e
+as well as their limitations. Implementation of set-driven
+systems can beneﬁt from a better knowledge of these as-
+sumptions, since human behaviour seems sensitive to repe-
+tition and order in experiences.
+Note that the presented result does not mean that when-
+ever we consider novelty as necessary for transformativene ss
+we are actually considering set-driven scientists. We can u se
+the formal tools to prove that this is not the case. As a short
+version of this proof, we can suggest the case of the scien-
+tist who always outputs the last novel artefact, which meets
+Condition 2 while not being set-driven (not Condition 1 ).
+Future Work
+The richness of this research path made the space restric-
+tions of this format quite challenging. Thus, there are seve ral
+promising directions that stayed out of this paper. Firstly ,
+alternative deﬁnitions, such as semantic transformativen ess,
+and the formalization of other CC concepts, like typicality ,
+both represent opportunities to enhance our understanding of
+creativity’s subtleties. Additionally, we also aim to unco ver
+new insights through the formal modeling of other assump-
+tions, such as Wiggins’ (2006) premise that transformative
+artifacts must lie outside the current hypothetical concep -
+tual space — termed aberrations. Another avenue involves
+considering schemas parameterized by various components,
+such as fates (Def 8), or moving beyond predicates to em-
+brace alternative schema representations like fuzzy sets o r
+semi-orders. Lastly, a critical exploration into the com-
+putability of these properties could yield valuable knowl-
+edge about the practicality and limitations of applying the se
+theoretical constructs in real systems.
+Despite mentioning ‘property extensions’ within this text ,
+we have only deﬁned some of the properties that could un-derpin a new paradigm, never explaining how we could build
+such paradigm out of these deﬁnitions. A longer format
+would be necessary to fully present these paradigms, what
+they can model and how they relate to other classic FLT ex-
+tensions such as accountable scientists, incomplete fates and
+the behaviourly correct criterion.
+Lastly, a primary objective for our future research is to ex-
+plore scientists capable of producing multiple sets of rule s,
+reviewing the role discrimination and generation have with in
+theory of computation. This approach aims to more accu-
+rately model the CSF, providing a nuanced understanding of
+creativity through the lens of FLT.
+Conclusion
+According to Wiggins (2019, p. 36), a “theoretical frame-
+work, such as that presented here, may be useful in teasing
+out philosophical issues, but it may also be useful in giving
+generalised descriptions of behaviours which might be ob-
+served in creative agents.” The present paper provides an
+accessible way to understand the advantage of using theo-
+retical frameworks – namely FLT – to study CC.
+In this paper, we prove that novel artefacts are neither nec-
+essary nor sufﬁcient for transformational creativity when we
+consider the wide range of possible behaviours over a se-
+quence of artefacts. However, if we consider agents that dis -
+regard the order as well as the repetitions, then novelty be-
+comes a requirement. We concluded then that agents based
+only on inspiring sets, as suggested by Ritchie (2007), migh t
+be disregarding some of the characteristics that make human
+creativity interesting, such as the fact that the same artef act
+can actually change one’s mind more than once.
+While practical research is crucial, its overvaluation oft en
+sidelines theoretical studies. The current trend of valuin g
+research topics mainly for their immediate practical appli ca-
+tions can, if overemphasized, risk limiting broader societ al
+progress to short-term gains. Theory can clarify the conse-
+quences of certain assumptions and guide developments in
+the long run. It is necessary to revitalize fundamental re-
+search by providing novel, pure, and non-applied results.
+These approaches are one of the characteristics that dis-
+tinguishes what we consider to be CC and Creative AI so we
+believe it is time to ﬁnally make it ofﬁcial and have a sub-
+branch dedicated to these matters – the sub-branch of Com-
+putational Creativity Theory (CCT). We believe this sugges -
+tion aligns well with Colton et al.’s (2015) original propos al
+of CCT that aimed at establishing a theory in CC akin to
+CLT. However, it is worth noting that over time this term
+has more often than not been associated with speciﬁc mod-
+els – FACE and IDEA (Colton, Charnley, and Pease, 2011;
+Pease and Colton, 2011) – published by the same authors
+under this banner. Our intention is to reclaim and broaden
+the term to designate a comprehensive research area, which
+closely aligns with what we think was Colton et al.’s (2015)
+original aspiration for CCT and possibly fulﬁlling its orig i-
+nal aim. To that end, we include under CCT, the new pro-
+posed set of deﬁnitions – the beggining of FCT.Author Contributions
+The primary author took the lead in writing and develop-
+ing the theoretical framework of this paper as part of their
+PhD work, which included the formulation of theorems and
+their respective proofs. The co-authors, who are the pri-
+mary author’s supervisors, made substantial contribution s
+through their critical review, feedback, and engaging dis-
+cussions during supervisory meetings. Their expertise and
+insights were crucial in reﬁning the deﬁnitions, enhancing
+the presentation of the matters, and ensuring the scholarly
+quality of the ﬁnal manuscript.
+Acknowledgments
+We extend our heartfelt thanks to our colleagues at the
+CCLab and the CMS, with special appreciation for Andr´ e
+Santos and M´ arcio Lima, for their invaluable and constant
+support. This work is funded by national funds through the
+FCT - Foundation for Science and Technology, I.P., within
+the scope of the project CISUC - UID/CEC/00326/2020
+and by European Social Fund, through the Regional Op-
+erational Program Centro 2020. The ﬁrst author is also
+individually funded by Foundation for Science and Tech-
+nology (FCT), Portugal, under the PhD fellowship grants
+(2021.05529.BD).
+References
+Angluin, D. 1980. Inductive inference of formal languages
+from positive data.
+Blum, and Blum. 1975. Toward a mathematical theory of
+inductive inference. Infect. Control .
+Boden, M. A. 1994. Creativity: A framework for research.
+Behav. Brain Sci. 17(3):558–570.
+Boden, M. A. 2004. The creative mind: Myths and mecha-
+nisms . London, England: Routledge, 2 edition.
+Bundy, A. 1994. What is the difference between real cre-
+ativity and mere novelty? Behav. Brain Sci. 17(3).
+Case, J., and Smith, C. 1983. Comparison of identiﬁcation
+criteria for machine inductive inference. Theor. Comput.
+Sci.25(2):193–220.
+Case, J. 2012. Algorithmic scientiﬁc inference. Interna-
+tional Journal of Unconventional Computing 8(3).
+Colton, S.; Pease, A.; Corneli, J.; Cook, M.; Hepworth, R.;
+and Ventura, D. 2015. Stakeholder groups in computa-
+tional creativity research and practice. In Atlantis Think-
+ing Machines . Paris: Atlantis Press. 3–36.
+Colton, S.; Charnley, J.; and Pease, A. 2011. Computational
+creativity theory: The FACE and IDEA descriptive mod-
+els.Proceedings of the 2nd International Conference on
+Computational Creativity, ICCC 2011 .
+E. Mark Gold. 1967. Language identiﬁcation in the limit.
+Information and Control 10(5):447–474.
+Gardenfors, P. 2004. Conceptual Spaces: The Geometry of
+Thought . MIT Press.Guilford, J. P. 1950. Creativity. American Psychologist
+5(9):444–454.
+Jain, S.; Osherson, D.; Royer, J. S.; and Sharma, A. 1999.
+Systems that Learn: An Introduction to Learning Theory .
+MIT Press.
+Koestler, A. 2014. The act of creation . One 70 Press.
+Mondol, T., and Brown, D. G. 2021. Incorporating al-
+gorithmic information theory into fundamental concepts
+of computational creativity. In Proceedings of the 12th
+International Conference on Computational Creativity,
+ICCC 2021 . Association for Computational Creativity
+{(ACC)}.
+Mumford, M. D. 2003. Where have we been, where are we
+going? taking stock in creativity research. Creat. Res. J.
+15(2-3):107–120.
+Pease, A., and Colton, S. 2011. Computational creativity
+theory: Inspirations behind the FACE and the IDEA mod-
+els.Proceedings of the 2nd International Conference on
+Computational Creativity, ICCC 2011 72–77.
+Rhodes, M. 1961. An analysis of creativity. Phi Delta
+Kappan 42(7):305–310.
+Ritchie, G. 2006. The transformational creativity hypothe -
+sis.New Generation Computing 24(3):241–266.
+Ritchie, G. 2007. Some empirical criteria for attributing
+creativity to a computer program. Minds Mach. 17(1):67–
+99.
+Rogers, H. 1967. Theory of Recursive Functions and Effec-
+tive Computability . McGraw-Hill.
+Schmidhuber, J. 2010. Formal theory of creativity, fun,
+and intrinsic motivation (1990–2010). IEEE Trans. Auton.
+Ment. Dev. 2(3):230–247.
+Turing, A. M. 1937. On computable numbers, with an ap-
+plication to the entscheidungsproblem. Proc. Lond. Math.
+Soc. s2-42(1):230–265.
+Varshney, L. R. 2019. Mathematical limit theorems for com-
+putational creativity. IBM J. Res. Dev. 63(1):2:1–2:12.
+Varshney, L. R. 2020. Limits theorems for creativity with
+intentionality. ICCC .
+Ventura, D. 2011. No free lunch in the search for creativity.
+InProceedings of the 2nd International Conference on
+Computational Creativity .
+Wallas, G. 1926. The art of thought , volume 10. Harcourt,
+Brace.
+Wiggins, G. A. 2006. Searching for computational creativ-
+ity.New Gener. Comput. 24(3):209–222.
+Wiggins, G. A. 2019. A framework for description, analysis
+and comparison of creative systems. In Veale, T., and Car-
+doso, F. A., eds., Computational Creativity: The Philoso-
+phy and Engineering of Autonomously Creative Systems .
+Cham: Springer International Publishing. 21–47.
