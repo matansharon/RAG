@@ -86,6 +86,6 @@ if __name__ == "__main__":
 
     main(
         documents_directory='text1',
-        collection_name=args.collection_name,
-        persist_directory=args.persist_directory,
+        collection_name='file1_collection',
+        persist_directory='chroma_storage',
     )
