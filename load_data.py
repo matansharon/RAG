@@ -85,7 +85,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     main(
-        documents_directory=args.data_directory,
+        documents_directory='text1',
         collection_name=args.collection_name,
         persist_directory=args.persist_directory,
     )
