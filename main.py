@@ -4,7 +4,8 @@ from typing import List
 from openai.types.chat import ChatCompletionMessageParam
 import openai
 import chromadb
-
+from dotenv import load_dotenv
+load_dotenv()
 
 def build_prompt(query: str, context: List[str]) -> List[ChatCompletionMessageParam]:
     """
@@ -64,16 +65,14 @@ def main(
     collection_name: str = "documents_collection", persist_directory: str = "."
 ) -> None:
     # Check if the OPENAI_API_KEY environment variable is set. Prompt the user to set it if not.
-    if "OPENAI_API_KEY" not in os.environ:
-        openai.api_key = input(
-            "Please enter your OpenAI API Key. You can get it from https://platform.openai.com/account/api-keys\n"
-        )
-
+    # if "OPENAI_API_KEY" not in os.environ:
+    #     openai.api_key = os.environ.get('OPENAI_API_KEY')
+    
     # Ask what model to use
     model_name = "gpt-3.5-turbo"
-    answer = input(f"Do you want to use GPT-4? (y/n) (default is {model_name}): ")
-    if answer == "y":
-        model_name = "gpt-4"
+    # answer = input(f"Do you want to use GPT-4? (y/n) (default is {model_name}): ")
+    # if answer == "y":
+    #     model_name = "gpt-4"
 
     # Instantiate a persistent chroma client in the persist_directory.
     # This will automatically load any previously saved collections.
@@ -136,6 +135,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     main(
-        collection_name='file1',
+        collection_name='file1_collection',
         persist_directory=args.persist_directory,
     )
