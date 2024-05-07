@@ -4,6 +4,7 @@ from typing import List
 from openai.types.chat import ChatCompletionMessageParam
 import openai
 import chromadb
+import anthropic
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -42,7 +43,7 @@ def build_prompt(query: str, context: List[str]) -> List[ChatCompletionMessagePa
     return [system, user]
 
 
-def get_chatGPT_response(query: str, context: List[str], model_name: str) -> str:
+def get_chatGPT_response(query: str, context: List[str]) -> str:
     """
     Queries the GPT API to get a response to the question.
 
@@ -54,11 +55,44 @@ def get_chatGPT_response(query: str, context: List[str], model_name: str) -> str
     A response to the question.
     """
     response = openai.chat.completions.create(
-        model=model_name,
+        model="gpt-3.5-turbo",
         messages=build_prompt(query, context),
     )
 
     return response.choices[0].message.content  # type: ignore
+
+def get_anthropic_response(query: str, context: List[str]) -> str:
+    """
+    Queries the GPT API to get a response to the question.
+
+    Args:
+    query (str): The original query.
+    context (List[str]): The context of the query, returned by embedding search.
+
+    Returns:
+    A response to the question.
+    """
+    client=anthropic.Anthropic(
+        api_key=os.environ.get("ANTHROPIC_API_KEY")
+    )
+    message = client.messages.create(
+        # model="claude-3-opus-20240229",
+        model='claude-3-haiku-20240307',
+        max_tokens=1000,
+        temperature=0.0,
+        system=f"""
+        I am going to ask you a question, which I would like you to answer"
+        "based only on the provided context, and not any other information."
+        "If there is not enough information in the context to answer the question,"
+        'say "I am not sure", then try to make a guess.'
+        "Break your answer up into nicely readable paragraphs.
+        here is all the context you have:{context}"
+        """,
+        messages=[
+            {"role": "user", "content": query}
+        ]
+    )
+    return message.content
 
 
 def main(
@@ -104,8 +138,8 @@ def main(
         )
 
         # Get the response from GPT
-        response = get_chatGPT_response(query, results["documents"][0], model_name)  # type: ignore
-
+        # response = get_chatGPT_response(query, results["documents"][0])  # type: ignore
+        response = get_anthropic_response(query, results["documents"][0])  # type: ignore
         # Output, with sources
         print(response)
         print("\n")
