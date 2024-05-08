@@ -7,7 +7,7 @@ import chromadb
 import anthropic
 from dotenv import load_dotenv
 load_dotenv()
-
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
 def build_prompt(query: str, context: List[str]) -> List[ChatCompletionMessageParam]:
     """
     Builds a prompt for the LLM. #
