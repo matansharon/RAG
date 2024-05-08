@@ -92,25 +92,15 @@ def get_anthropic_response(query: str, context: List[str]) -> str:
             {"role": "user", "content": query}
         ]
     )
-    return message.content
+    return message.content[0].text
 
 
 def main(
     collection_name: str = "documents_collection", persist_directory: str = "."
 ) -> None:
-    # Check if the OPENAI_API_KEY environment variable is set. Prompt the user to set it if not.
-    # if "OPENAI_API_KEY" not in os.environ:
-    #     openai.api_key = os.environ.get('OPENAI_API_KEY')
     
-    # Ask what model to use
-    model_name = "gpt-3.5-turbo"
-    # answer = input(f"Do you want to use GPT-4? (y/n) (default is {model_name}): ")
-    # if answer == "y":
-    #     model_name = "gpt-4"
 
-    # Instantiate a persistent chroma client in the persist_directory.
-    # This will automatically load any previously saved collections.
-    # Learn more at docs.trychroma.com
+    
     client = chromadb.PersistentClient(path=persist_directory)
 
     # Get the collection.
@@ -123,7 +113,6 @@ def main(
         if len(query) == 0:
             print("Please enter a question. Ctrl+C to Quit.\n")
             continue
-        print(f"\nThinking using {model_name}...\n")
 
         # Query the collection to get the 5 most relevant results
         results = collection.query(

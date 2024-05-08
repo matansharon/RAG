@@ -1,2 +1,4 @@
 rag_venv3/
 .env
+chroma_storage/
+chroma_storage/chroma.sqlite3

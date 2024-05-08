@@ -15,19 +15,6 @@ def main(
     documents = []
     metadatas = []
     files = os.listdir(documents_directory)
-    for filename in files:
-        with open(f"{documents_directory}/{filename}", "r") as file:
-            for line_number, line in enumerate(
-                tqdm((file.readlines()), desc=f"Reading {filename}"), 1
-            ):
-                # Strip whitespace and append the line to the documents list
-                line = line.strip()
-                # Skip empty lines
-                if len(line) == 0:
-                    continue
-                documents.append(line)
-                metadatas.append({"filename": filename, "line_number": line_number})
-
     # Instantiate a persistent chroma client in the persist_directory.
     # Learn more at docs.trychroma.com
     client = chromadb.PersistentClient(path=persist_directory)
@@ -35,6 +22,25 @@ def main(
     # If the collection already exists, we just return it. This allows us to add more
     # data to an existing collection.
     collection = client.get_or_create_collection(name=collection_name)
+    existing_files=set()
+    for line in collection.get()['metadatas']:
+        existing_files.add(line['filename'])
+    
+    for filename in files:
+        if filename not in existing_files:
+            with open(f"{documents_directory}/{filename}", "r") as file:
+                for line_number, line in enumerate(
+                    tqdm((file.readlines()), desc=f"Reading {filename}"), 1
+                ):
+                    # Strip whitespace and append the line to the documents list
+                    line = line.strip()
+                    # Skip empty lines
+                    if len(line) == 0:
+                        continue
+                    documents.append(line)
+                    metadatas.append({"filename": filename, "line_number": line_number})
+
+    
 
     # Create ids from the current count
     count = collection.count()
