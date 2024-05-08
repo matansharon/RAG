@@ -6,6 +6,7 @@ import openai
 import chromadb
 import anthropic
 from dotenv import load_dotenv
+import streamlit as st
 load_dotenv()
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 def build_prompt(query: str, context: List[str]) -> List[ChatCompletionMessageParam]:
@@ -95,7 +96,7 @@ def get_anthropic_response(query: str, context: List[str]) -> str:
     return message.content[0].text
 
 
-def main(
+def load_data_base(
     collection_name: str = "documents_collection", persist_directory: str = "."
 ) -> None:
     
@@ -106,41 +107,36 @@ def main(
     # Get the collection.
     collection = client.get_collection(name=collection_name)
 
-    # We use a simple input loop.
-    while True:
-        # Get the user's query
-        query = input("Query: ")
-        if len(query) == 0:
-            print("Please enter a question. Ctrl+C to Quit.\n")
-            continue
-
-        # Query the collection to get the 5 most relevant results
+    
+    st.title("Anthropic RAG Chat")
+    query=st.chat_input("send a message")
+    if query:
         results = collection.query(
             query_texts=[query], n_results=5, include=["documents", "metadatas"]
         )
+        # sources = "\n".join(
+        #     [
+        #         f"{result['filename']}: line {result['line_number']}"
+        #         for result in results["metadatas"][0]  # type: ignore
+        #     ]
+        # )
+        sources=[]
+        for i in results["metadatas"][0]:
+            sources.append((i["filename"],i["line_number"]))
+        response=get_anthropic_response(query,results["documents"][0])
+        st.write(response)
 
-        sources = "\n".join(
-            [
-                f"{result['filename']}: line {result['line_number']}"
-                for result in results["metadatas"][0]  # type: ignore
-            ]
-        )
-
-        # Get the response from GPT
-        # response = get_chatGPT_response(query, results["documents"][0])  # type: ignore
-        response = get_anthropic_response(query, results["documents"][0])  # type: ignore
-        # Output, with sources
-        print(response)
-        print("\n")
-        print(f"Source documents:\n{sources}")
-        print("\n")
-
+        st.write("\n")
+        st.write(f"Source documents:\n")
+        # st.write(sources)
+        for k,v in sources:
+            st.write(f"{k}: line {v}")
+        st.write("\n")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Load documents from a directory into a Chroma collection"
     )
-
     parser.add_argument(
         "--persist_directory",
         type=str,
@@ -153,11 +149,6 @@ if __name__ == "__main__":
         default="documents_collection",
         help="The name of the Chroma collection",
     )
-
     # Parse arguments
     args = parser.parse_args()
-
-    main(
-        collection_name='file1_collection',
-        persist_directory=args.persist_directory,
-    )
+    load_data_base(collection_name='file1_collection',persist_directory=args.persist_directory)
