@@ -128,15 +128,15 @@ def load_data_base(
         # )
         sources=[]
         for i in results["metadatas"][0]:
-            sources.append((i["filename"],i["line_number"]))
+            sources.append((i["filename"],i["page_number"]))
         response=get_anthropic_response(query,results["documents"][0])
         st.write(response)
 
         st.write("\n")
         st.write(f"Source documents:\n")
-        # st.write(sources)
+        # st.write(results["documents"][0])
         for k,v in sources:
-            st.write(f"{k}: line {v}")
+            st.write(f"{k} : page number {v+1}")
         st.write("\n")
 
 if __name__ == "__main__":
