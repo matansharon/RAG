@@ -109,6 +109,10 @@ def load_data_base(
 
     
     st.title("Anthropic RAG Chat")
+    user=st.chat_message("user")
+    ai=st.chat_message("ai")
+    user.write("Hello")
+    ai.write("how can I help you?")
     with st.sidebar:
         existing_files=set()
         for line in collection.get()['metadatas']:
@@ -118,14 +122,9 @@ def load_data_base(
     query=st.chat_input("send a message")
     if query:
         results = collection.query(
-            query_texts=[query], n_results=5, include=["documents", "metadatas"]
+            query_texts=[query], n_results=10, include=["documents", "metadatas","distances"],
         )
-        # sources = "\n".join(
-        #     [
-        #         f"{result['filename']}: line {result['line_number']}"
-        #         for result in results["metadatas"][0]  # type: ignore
-        #     ]
-        # )
+        
         sources=[]
         for i in results["metadatas"][0]:
             sources.append((i["filename"],i["page_number"]))
