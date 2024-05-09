@@ -91,7 +91,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     main(
-        documents_directory='text1',
+        documents_directory='text_files',
         collection_name='file1_collection',
         persist_directory='chroma_storage',
     )

@@ -80,7 +80,7 @@ def get_anthropic_response(query: str, context: List[str]) -> str:
         # model="claude-3-opus-20240229",
         model='claude-3-haiku-20240307',
         max_tokens=1000,
-        temperature=0.0,
+        temperature=0.2  ,
         system=f"""
         I am going to ask you a question, which I would like you to answer"
         "based only on the provided context, and not any other information."
@@ -109,6 +109,12 @@ def load_data_base(
 
     
     st.title("Anthropic RAG Chat")
+    with st.sidebar:
+        existing_files=set()
+        for line in collection.get()['metadatas']:
+            existing_files.add(line['filename'])
+        for file in existing_files:
+            st.write(file)
     query=st.chat_input("send a message")
     if query:
         results = collection.query(
