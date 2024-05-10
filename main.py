@@ -19,58 +19,8 @@ class Message():
 
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
-def build_prompt(query: str, context: List[str]) -> List[ChatCompletionMessageParam]:
-    """
-    Builds a prompt for the LLM. #
-
-    This function builds a prompt for the LLM. It takes the original query,
-    and the returned context, and asks the model to answer the question based only
-    on what's in the context, not what's in its weights.
-
-    More information: https://platform.openai.com/docs/guides/chat/introduction
-
-    Args:
-    query (str): The original query.
-    context (List[str]): The context of the query, returned by embedding search.
-
-    Returns:
-    A prompt for the LLM (List[ChatCompletionMessageParam]).
-    """
-
-    system: ChatCompletionMessageParam = {
-        "role": "system",
-        "content": "I am going to ask you a question, which I would like you to answer"
-        "based only on the provided context, and not any other information."
-        "If there is not enough information in the context to answer the question,"
-        'say "I am not sure", then try to make a guess.'
-        "Break your answer up into nicely readable paragraphs.",
-    }
-    user: ChatCompletionMessageParam = {
-        "role": "user",
-        "content": f"The question is {query}. Here is all the context you have:"
-        f'{(" ").join(context)}',
-    }
-
-    return [system, user]
 
 
-def get_chatGPT_response(query: str, context: List[str]) -> str:
-    """
-    Queries the GPT API to get a response to the question.
-
-    Args:
-    query (str): The original query.
-    context (List[str]): The context of the query, returned by embedding search.
-
-    Returns:
-    A response to the question.
-    """
-    response = openai.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=build_prompt(query, context),
-    )
-
-    return response.choices[0].message.content  # type: ignore
 
 def get_anthropic_response(query: str, context: List[str]) -> str:
     """
