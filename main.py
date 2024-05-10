@@ -55,7 +55,19 @@ def get_anthropic_response(query: str, context: List[str]) -> str:
     )
     return {'content':message.content[0].text,'usage':message.usage}
 
-
+def write_side_bar():
+    with st.sidebar:
+        
+        st.markdown("## Input Usage: ")
+        st.write(st.session_state.input_usage)
+        st.markdown("## Output Usage: ")
+        st.write(st.session_state.output_usage)
+        st.markdown("## Total Usage: ")
+        st.write(st.session_state.total_usage)
+        for line in st.session_state.collection.get()['metadatas']:
+            st.session_state.existing_files.add(line['filename'])
+        for file in st.session_state.existing_files:
+            st.write(file)
 def load_data_base(
     collection_name: str = "documents_collection", persist_directory: str = "."
 ) -> None:
@@ -74,19 +86,19 @@ def load_data_base(
     st.session_state['output_usage']=0
     st.session_state['total_usage']=0
     st.session_state['existing_files']=set()
+    st.session_state['init']=True
     
     st.title("Anthropic RAG Chat")
     user=st.chat_message("user")
     ai=st.chat_message("ai")
     user.write("Hello")
     ai.write("how can I help you?")
-    with st.sidebar:
-        
-        
-        for line in collection.get()['metadatas']:
-            st.session_state.existing_files.add(line['filename'])
-        for file in st.session_state.existing_files:
-            st.write(file)
+    # if st.session_state.init==True:
+    #     st.session_state.init=False
+    #     write_side_bar()
+
+
+
     query=st.chat_input("send a message")
     if query:
         results = collection.query(
@@ -96,8 +108,12 @@ def load_data_base(
         sources=[]
         for i in results["metadatas"][0]:
             sources.append((i["filename"],i["page_number"]))
-        response=get_anthropic_response(query,results["documents"][0])['content']
-        st.write(response)
+        response=get_anthropic_response(query,results["documents"][0])
+        st.write(response['content'])
+        
+        st.session_state.input_usage=response['usage'].input_tokens+st.session_state.input_usage
+        st.session_state.output_usage=response['usage'].output_tokens+st.session_state.output_usage
+        st.session_state.total_usage=st.session_state.input_usage+st.session_state.output_usage+st.session_state.total_usage
 
         st.write("\n")
         st.write(f"Source documents:\n")
@@ -105,6 +121,7 @@ def load_data_base(
         for k,v in sources:
             st.write(f"{k} : page number {v+1}")
         st.write("\n")
+        write_side_bar()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
