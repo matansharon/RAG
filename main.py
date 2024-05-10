@@ -8,6 +8,16 @@ import anthropic
 from dotenv import load_dotenv
 import streamlit as st
 load_dotenv()
+class Message():
+    def __init__(self):
+        self.content=''
+        self.type=''
+    def get_content(self):
+        return self.content
+    def get_type(self):
+        return self.type
+
+
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 def build_prompt(query: str, context: List[str]) -> List[ChatCompletionMessageParam]:
     """
@@ -93,7 +103,7 @@ def get_anthropic_response(query: str, context: List[str]) -> str:
             {"role": "user", "content": query}
         ]
     )
-    return message.content[0].text
+    return {'content':message.content[0].text,'usage':message.usage}
 
 
 def load_data_base(
@@ -107,6 +117,13 @@ def load_data_base(
     # Get the collection.
     collection = client.get_collection(name=collection_name)
 
+    #init
+    st.session_state['collection']=collection
+    st.session_state['client']=client
+    st.session_state['input_usage']=0
+    st.session_state['output_usage']=0
+    st.session_state['total_usage']=0
+    st.session_state['existing_files']=set()
     
     st.title("Anthropic RAG Chat")
     user=st.chat_message("user")
@@ -114,10 +131,11 @@ def load_data_base(
     user.write("Hello")
     ai.write("how can I help you?")
     with st.sidebar:
-        existing_files=set()
+        
+        
         for line in collection.get()['metadatas']:
-            existing_files.add(line['filename'])
-        for file in existing_files:
+            st.session_state.existing_files.add(line['filename'])
+        for file in st.session_state.existing_files:
             st.write(file)
     query=st.chat_input("send a message")
     if query:
@@ -128,7 +146,7 @@ def load_data_base(
         sources=[]
         for i in results["metadatas"][0]:
             sources.append((i["filename"],i["page_number"]))
-        response=get_anthropic_response(query,results["documents"][0])
+        response=get_anthropic_response(query,results["documents"][0])['content']
         st.write(response)
 
         st.write("\n")
