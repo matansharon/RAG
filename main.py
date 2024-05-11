@@ -8,6 +8,25 @@ import anthropic
 from dotenv import load_dotenv
 import streamlit as st
 load_dotenv()
+
+
+
+
+    # Get the collection.
+
+if 'init' not in st.session_state:
+    st.write("in init")
+    st.session_state['init']=True
+    client = chromadb.PersistentClient(path='chroma_storage')
+    collection = client.get_collection(name='file1_collection')
+    st.session_state['collection']=collection
+    st.session_state['client']=client
+    st.session_state['input_usage']=0
+    st.session_state['output_usage']=0
+    st.session_state['total_usage']=0
+    st.session_state['existing_files']=set()
+    
+
 class Message():
     def __init__(self):
         self.content=''
@@ -68,25 +87,10 @@ def write_side_bar():
             st.session_state.existing_files.add(line['filename'])
         for file in st.session_state.existing_files:
             st.write(file)
-def load_data_base(
-    collection_name: str = "documents_collection", persist_directory: str = "."
-) -> None:
-    
+def load_data_base() -> None:
 
     
-    client = chromadb.PersistentClient(path=persist_directory)
-
-    # Get the collection.
-    collection = client.get_collection(name=collection_name)
-
-    #init
-    st.session_state['collection']=collection
-    st.session_state['client']=client
-    st.session_state['input_usage']=0
-    st.session_state['output_usage']=0
-    st.session_state['total_usage']=0
-    st.session_state['existing_files']=set()
-    st.session_state['init']=True
+    
     
     st.title("Anthropic RAG Chat")
     user=st.chat_message("user")
@@ -101,7 +105,7 @@ def load_data_base(
 
     query=st.chat_input("send a message")
     if query:
-        results = collection.query(
+        results = st.session_state.collection.query(
             query_texts=[query], n_results=10, include=["documents", "metadatas","distances"],
         )
         
@@ -111,9 +115,9 @@ def load_data_base(
         response=get_anthropic_response(query,results["documents"][0])
         st.write(response['content'])
         
-        st.session_state.input_usage=response['usage'].input_tokens+st.session_state.input_usage
-        st.session_state.output_usage=response['usage'].output_tokens+st.session_state.output_usage
-        st.session_state.total_usage=st.session_state.input_usage+st.session_state.output_usage+st.session_state.total_usage
+        st.session_state.input_usage+=response['usage'].input_tokens
+        st.session_state.output_usage+=response['usage'].output_tokens
+        st.session_state.total_usage+=st.session_state.input_usage+st.session_state.output_usage
 
         st.write("\n")
         st.write(f"Source documents:\n")
@@ -141,4 +145,4 @@ if __name__ == "__main__":
     )
     # Parse arguments
     args = parser.parse_args()
-    load_data_base(collection_name='file1_collection',persist_directory=args.persist_directory)
+    load_data_base()
