@@ -92,8 +92,8 @@ def get_anthropic_response(query: str) -> str:
             {"role": "user", "content": query}
         ]
     )
-    st.session_state['chat_history'].append(Message(response.content[0].text,'ai'))
     st.session_state['chat_history'].append(Message(query,'user'))
+    st.session_state['chat_history'].append(Message(response.content[0].text,'ai'))
     
     st.session_state.input_usage+=response.usage.input_tokens
     st.session_state.output_usage+=response.usage.output_tokens
@@ -122,15 +122,14 @@ def display_chat_history():
         
     st.write("number of objects in chat_history: ",len(st.session_state['chat_history']))
     if 'chat_history' in st.session_state:
-        ai=st.chat_message("ai")
-        user=st.chat_message("user")
+        
         for i in st.session_state['chat_history']:
-            if i.get_type()=='ai':
-                st.write(i.get_content())
-            elif i.get_type()=='user':
+            if i.get_type()=='user':
 
-                st.write(i.get_content())
+                st.chat_message('user').write(i.get_content())
     
+            elif i.get_type()=='ai':
+                st.chat_message('assistant').write(i.get_content())
 def main() -> None:
     if 'init' not in st.session_state:
         init()
