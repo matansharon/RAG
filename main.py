@@ -57,16 +57,7 @@ def init():
 #--------------------------------------------------------------------------------------------------------------------------------#
 
 def get_anthropic_response(query: str) -> str:
-    """
-    Queries the GPT API to get a response to the question.
-
-    Args:
-    query (str): The original query.
-    context (List[str]): The context of the query, returned by embedding search.
-
-    Returns:
-    A response to the question.
-    """
+    
     results = st.session_state.collection.query(
             query_texts=[query], n_results=10, include=["documents", "metadatas","distances"],
         )
@@ -146,6 +137,13 @@ def main() -> None:
     write_side_bar()
 
 if __name__ == "__main__":
+    main()
+
+
+
+
+
+#legacy code
     # parser = argparse.ArgumentParser(
     #     description="Load documents from a directory into a Chroma collection"
     # )
@@ -163,5 +161,3 @@ if __name__ == "__main__":
     # )
     # # Parse arguments
     # args = parser.parse_args()
-    
-    main()
