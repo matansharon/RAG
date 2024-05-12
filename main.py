@@ -110,10 +110,13 @@ def write_side_bar():
         st.write(st.session_state.output_usage)
         st.markdown("## Total Usage: ")
         st.write(st.session_state.total_usage)
+        # st.write("## Existing Files: ",st.session_state.collection.get()['metadatas'])
         for file_name in st.session_state.collection.get()['metadatas']:
             if file_name['filename'] not in st.session_state.existing_files:
-                st.write(file_name['filename'])
+                # st.write(file_name['filename'])
                 st.session_state.existing_files.add(file_name['filename'])
+        for file in st.session_state.existing_files:
+            st.write(file)
         
 #--------------------------------------------------------------------------------------------------------------------------------#
 #--------------------------------------------------------------------------------------------------------------------------------#
