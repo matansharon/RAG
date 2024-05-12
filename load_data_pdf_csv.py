@@ -3,7 +3,7 @@ import argparse
 from tqdm import tqdm
 import chromadb
 import PyPDF2
-
+import pandas as pd
 def read_pdf(file_path: str) -> str:
     res=[]
     pages=PyPDF2.PdfReader(file_path).pages
@@ -29,14 +29,21 @@ def main(documents_directory: str = "documents",collection_name: str = "document
     files=os.listdir(documents_directory)
     for filename in files:
         if filename not in existing_files:
-            pages=read_pdf(f"{documents_directory}/{filename}")
-            print(pages)
-            for page_number,page in enumerate(pages):
-                
-                if len(page) == 0:
-                        continue
-                documents.append(page)
-                metadatas.append({"filename": filename, "page_number": page_number})
+            if filename.endswith(".pdf"):
+                pages=read_pdf(f"{documents_directory}/{filename}")
+                print(pages)
+                for page_number,page in enumerate(pages):
+                    
+                    if len(page) == 0:
+                            continue
+                    documents.append(page)
+                    metadatas.append({"filename": filename, "page_number": page_number})
+            if filename.endswith(".csv"):
+                df=pd.read_csv(f"{documents_directory}/{filename}")
+                df_str=df.to_string()
+                documents.append(df_str)
+                metadatas.append({"filename": filename})
+            
     # Create ids from the current count
     count = collection.count()
     print(f"Collection already contains {count} documents")
