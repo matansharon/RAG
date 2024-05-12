@@ -7,9 +7,14 @@ import chromadb
 import anthropic
 from dotenv import load_dotenv
 import streamlit as st
+#--------------------------------------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------------------------------------#
+
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
 load_dotenv()
 
-
+#--------------------------------------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------------------------------------#
 class Message():
     def __init__(self,content:str,type:str):
         self.content=content
@@ -24,11 +29,12 @@ class Message():
         self.type=type
     
 
-
+#--------------------------------------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------------------------------------#
     # Get the collection.
-
-if 'init' not in st.session_state:
+def init():
     
+        
     st.session_state['init']=True
     client = chromadb.PersistentClient(path='chroma_storage')
     collection = client.get_collection(name='file1_collection')
@@ -38,13 +44,13 @@ if 'init' not in st.session_state:
     st.session_state['output_usage']=0
     st.session_state['total_usage']=0
     st.session_state['existing_files']=set()
+
     
 
 
 
-os.environ["TOKENIZERS_PARALLELISM"] = "false"
-
-
+#--------------------------------------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------------------------------------#
 
 def get_anthropic_response(query: str) -> str:
     """
@@ -70,7 +76,7 @@ def get_anthropic_response(query: str) -> str:
         # model="claude-3-opus-20240229",
         model='claude-3-haiku-20240307',
         max_tokens=1000,
-        temperature=0.2  ,
+        temperature=0.2,
         system=f"""
         I am going to ask you a question, which I would like you to answer"
         "based only on the provided context, and not any other information."
@@ -83,13 +89,16 @@ def get_anthropic_response(query: str) -> str:
             {"role": "user", "content": query}
         ]
     )
-    st.write(response.content[0].text)
+    st.session_state['chat_history'].append(Message(response.content[0].text,'ai'))
+    st.session_state['chat_history'].append(Message(query,'user'))
     
     st.session_state.input_usage+=response.usage.input_tokens
     st.session_state.output_usage+=response.usage.output_tokens
     st.session_state.total_usage+=st.session_state.input_usage+st.session_state.output_usage
+    display_chat_history()
     
-
+#--------------------------------------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------------------------------------#
 def write_side_bar():
     with st.sidebar:
         
@@ -103,33 +112,34 @@ def write_side_bar():
             if file_name['filename'] not in st.session_state.existing_files:
                 st.write(file_name['filename'])
                 st.session_state.existing_files.add(file_name['filename'])
-        # for line in st.session_state.collection.get()['metadatas']:
-        #     st.session_state.existing_files.add(line['filename'])
-        # for file in st.session_state.existing_files:
-        #     st.write(file)
-
+        
+#--------------------------------------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------------------------------------#
 def display_chat_history():
     if 'chat_history' not in st.session_state:
         st.session_state['chat_history']=[]
-        m1=Message("hello","ai")
-        m2=Message("hi","user")
-        st.session_state['chat_history'].append(m1)
-        st.session_state['chat_history'].append(m2)
+        
+        st.session_state['chat_history'].append(Message("Hello, I am an AI assistant. How can I help you today?","ai"))
     ai=st.chat_message("ai")
     user=st.chat_message("user")
     for i in st.session_state['chat_history']:
         if i.get_type()=='ai':
-            st.chat_message("ai").write(i.get_content())
-        else:
-            st.chat_message("user").write(i.get_content())
+            ai.write(i.get_content())
+        elif i.get_type()=='user':
+            st.write("in user")
+            user.write(i.get_content())
+    
 def main() -> None:
+    if 'init' not in st.session_state:
+        init()
     st.title("Anthropic RAG Chat")
-    write_side_bar()
+    
     query=st.chat_input("send a message")
     if query:
         get_anthropic_response(query)
-        
+
     display_chat_history()
+    write_side_bar()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
