@@ -10,12 +10,25 @@ import streamlit as st
 load_dotenv()
 
 
+class Message():
+    def __init__(self,content:str,type:str):
+        self.content=content
+        self.type=type
+    def get_content(self):
+        return self.content
+    def get_type(self):
+        return self.type
+    def set_content(self,content:str):
+        self.content=content
+    def set_type(self,type:str):
+        self.type=type
+    
 
 
     # Get the collection.
 
 if 'init' not in st.session_state:
-    st.write("in init")
+    
     st.session_state['init']=True
     client = chromadb.PersistentClient(path='chroma_storage')
     collection = client.get_collection(name='file1_collection')
@@ -27,21 +40,13 @@ if 'init' not in st.session_state:
     st.session_state['existing_files']=set()
     
 
-class Message():
-    def __init__(self):
-        self.content=''
-        self.type=''
-    def get_content(self):
-        return self.content
-    def get_type(self):
-        return self.type
 
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 
 
-def get_anthropic_response(query: str, context: List[str]) -> str:
+def get_anthropic_response(query: str) -> str:
     """
     Queries the GPT API to get a response to the question.
 
@@ -52,10 +57,16 @@ def get_anthropic_response(query: str, context: List[str]) -> str:
     Returns:
     A response to the question.
     """
+    results = st.session_state.collection.query(
+            query_texts=[query], n_results=10, include=["documents", "metadatas","distances"],
+        )
+        
+    
+    context=results["documents"][0]
     client=anthropic.Anthropic(
         api_key=os.environ.get("ANTHROPIC_API_KEY")
     )
-    message = client.messages.create(
+    response = client.messages.create(
         # model="claude-3-opus-20240229",
         model='claude-3-haiku-20240307',
         max_tokens=1000,
@@ -72,7 +83,12 @@ def get_anthropic_response(query: str, context: List[str]) -> str:
             {"role": "user", "content": query}
         ]
     )
-    return {'content':message.content[0].text,'usage':message.usage}
+    st.write(response.content[0].text)
+    
+    st.session_state.input_usage+=response.usage.input_tokens
+    st.session_state.output_usage+=response.usage.output_tokens
+    st.session_state.total_usage+=st.session_state.input_usage+st.session_state.output_usage
+    
 
 def write_side_bar():
     with st.sidebar:
@@ -83,49 +99,37 @@ def write_side_bar():
         st.write(st.session_state.output_usage)
         st.markdown("## Total Usage: ")
         st.write(st.session_state.total_usage)
-        for line in st.session_state.collection.get()['metadatas']:
-            st.session_state.existing_files.add(line['filename'])
-        for file in st.session_state.existing_files:
-            st.write(file)
-def load_data_base() -> None:
+        for file_name in st.session_state.collection.get()['metadatas']:
+            if file_name['filename'] not in st.session_state.existing_files:
+                st.write(file_name['filename'])
+                st.session_state.existing_files.add(file_name['filename'])
+        # for line in st.session_state.collection.get()['metadatas']:
+        #     st.session_state.existing_files.add(line['filename'])
+        # for file in st.session_state.existing_files:
+        #     st.write(file)
 
-    
-    
-    
-    st.title("Anthropic RAG Chat")
-    user=st.chat_message("user")
+def display_chat_history():
+    if 'chat_history' not in st.session_state:
+        st.session_state['chat_history']=[]
+        m1=Message("hello","ai")
+        m2=Message("hi","user")
+        st.session_state['chat_history'].append(m1)
+        st.session_state['chat_history'].append(m2)
     ai=st.chat_message("ai")
-    user.write("Hello")
-    ai.write("how can I help you?")
-    # if st.session_state.init==True:
-    #     st.session_state.init=False
-    #     write_side_bar()
-
-
-
+    user=st.chat_message("user")
+    for i in st.session_state['chat_history']:
+        if i.get_type()=='ai':
+            st.chat_message("ai").write(i.get_content())
+        else:
+            st.chat_message("user").write(i.get_content())
+def main() -> None:
+    st.title("Anthropic RAG Chat")
+    write_side_bar()
     query=st.chat_input("send a message")
     if query:
-        results = st.session_state.collection.query(
-            query_texts=[query], n_results=10, include=["documents", "metadatas","distances"],
-        )
+        get_anthropic_response(query)
         
-        sources=[]
-        for i in results["metadatas"][0]:
-            sources.append((i["filename"],i["page_number"]))
-        response=get_anthropic_response(query,results["documents"][0])
-        st.write(response['content'])
-        
-        st.session_state.input_usage+=response['usage'].input_tokens
-        st.session_state.output_usage+=response['usage'].output_tokens
-        st.session_state.total_usage+=st.session_state.input_usage+st.session_state.output_usage
-
-        st.write("\n")
-        st.write(f"Source documents:\n")
-        # st.write(results["documents"][0])
-        for k,v in sources:
-            st.write(f"{k} : page number {v+1}")
-        st.write("\n")
-        write_side_bar()
+    display_chat_history()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -145,4 +149,4 @@ if __name__ == "__main__":
     )
     # Parse arguments
     args = parser.parse_args()
-    load_data_base()
+    main()
