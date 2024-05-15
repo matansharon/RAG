@@ -7,9 +7,13 @@ import chromadb
 import anthropic
 from dotenv import load_dotenv
 import streamlit as st
-#--------------------------------------------------------------------------------------------------------------------------------#
-#--------------------------------------------------------------------------------------------------------------------------------#
+import google.generativeai as genai
+import os
 
+#--------------------------------------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------------------------------------#
+GOOGLE_API_KEY=os.environ.get('GOOGLE_API_KEY')
+genai.configure(api_key=GOOGLE_API_KEY)
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 load_dotenv()
 
@@ -51,19 +55,18 @@ def init():
     st.session_state['chat_history'].append(Message("Hello, I am an AI assistant. How can I help you today?","ai"))
     
 
-
-
-#--------------------------------------------------------------------------------------------------------------------------------#
-#--------------------------------------------------------------------------------------------------------------------------------#
-
-def get_anthropic_response(query: str) -> str:
-    
+def get_results(query: str) -> List[str]:
     results = st.session_state.collection.query(
-            query_texts=[query], n_results=10, include=["documents", "metadatas","distances"],
-        )
-        
+        query_texts=[query], n_results=3, include=["documents", "metadatas","distances"],
+    )
+    return results['documents'][0]
+
+#--------------------------------------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------------------------------------#
+
+def get_anthropic_response(query: str,context:list) -> str:
     
-    context=results["documents"][0]
+    
     
     
     response = st.session_state['anthropic_client'].messages.create(
@@ -131,7 +134,8 @@ def main() -> None:
     
     query=st.chat_input("send a message")
     if query:
-        get_anthropic_response(query)
+        context=get_results(query)
+        get_anthropic_response(query,context)
 
     display_chat_history()
     write_side_bar()
