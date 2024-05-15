@@ -11,6 +11,26 @@ def read_pdf(file_path: str) -> str:
         res.append(page.extract_text())
     return res
 
+def read_and_convert_csv(file_path: str) -> str:
+    df=pd.read_csv(file_path)
+    # Convert the dataframe to a string
+    df=df.to_string().strip()
+    column_row=df.split("\n")[0]
+    #split the string into a list of strings
+    rows=df.split("\n")
+    pages=[]
+    page=[]
+    for i in range(1,len(rows),10):
+        page.append(column_row)
+        for j in range(i,i+10):
+            if j<len(rows):
+            
+                page.append(rows[j])
+        pages.append(page)
+        page=[]
+    return pages
+    
+
 def main(documents_directory: str = "documents",collection_name: str = "documents_collection",persist_directory: str = ".",) -> None:
     # Read all files in the data directory
     documents = []
@@ -31,7 +51,7 @@ def main(documents_directory: str = "documents",collection_name: str = "document
         if filename not in existing_files:
             if filename.endswith(".pdf"):
                 pages=read_pdf(f"{documents_directory}/{filename}")
-                print(pages)
+                # print(pages)
                 for page_number,page in enumerate(pages):
                     
                     if len(page) == 0:
@@ -39,10 +59,14 @@ def main(documents_directory: str = "documents",collection_name: str = "document
                     documents.append(page)
                     metadatas.append({"filename": filename, "page_number": page_number})
             if filename.endswith(".csv"):
-                df=pd.read_csv(f"{documents_directory}/{filename}")
-                df_str=df.to_string()
-                documents.append(df_str)
-                metadatas.append({"filename": filename})
+                pages=read_and_convert_csv(f"{documents_directory}/{filename}")
+                for page_number,page in enumerate(pages):
+                    if len(page) == 0:
+                            continue
+                    df_str = "\n".join(page)
+                    
+                    documents.append(df_str)
+                    metadatas.append({"filename": filename,"page_number": page_number})
             
     # Create ids from the current count
     count = collection.count()
@@ -84,7 +108,7 @@ if __name__ == "__main__":
 
     main(
         documents_directory='documents',
-        collection_name='file1_collection',
-        persist_directory='chroma_storage',
+        collection_name='by_pages_collection',
+        persist_directory='chroma_storage_pages',
     )
     
