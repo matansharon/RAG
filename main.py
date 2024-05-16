@@ -64,6 +64,29 @@ def get_results(query: str) -> List[str]:
 #--------------------------------------------------------------------------------------------------------------------------------#
 #--------------------------------------------------------------------------------------------------------------------------------#
 
+def filter_results(data):
+    # Unpack data
+    ids = data.get('ids', [])
+    distances = data.get('distances', [])
+    metadatas = data.get('metadatas', [])
+    documents = data.get('documents', [])
+    
+    filtered_results = {'ids': [], 'distances': [], 'metadatas': [], 'documents': []}
+    
+    # Iterate over distances and filter based on the criteria
+    for i, distance_list in enumerate(distances):
+        for j, distance in enumerate(distance_list):
+            if abs(1 - distance) < 0.4:
+                filtered_results['ids'].append(ids[i][j])
+                filtered_results['distances'].append(distance)
+                filtered_results['metadatas'].append(metadatas[i][j])
+                filtered_results['documents'].append(documents[i][j])
+                
+    return filtered_results
+
+#--------------------------------------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------------------------------------#
+
 def get_anthropic_response(query: str,context:list) -> str:
     
     
@@ -127,6 +150,11 @@ def display_chat_history():
     
             elif i.get_type()=='ai':
                 st.chat_message('assistant').write(i.get_content())
+#--------------------------------------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------------------------------------#
+
 def main() -> None:
     if 'init' not in st.session_state:
         init()
@@ -139,6 +167,8 @@ def main() -> None:
 
     display_chat_history()
     write_side_bar()
+#--------------------------------------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------------------------------------#
 
 if __name__ == "__main__":
     main()
