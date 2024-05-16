@@ -35,17 +35,15 @@ class Message():
 
 #--------------------------------------------------------------------------------------------------------------------------------#
 #--------------------------------------------------------------------------------------------------------------------------------#
-    # Get the collection.
+
 def init():
     
-    anthropic_client=anthropic.Anthropic(
-        api_key=os.environ.get("ANTHROPIC_API_KEY")
-    )
     
     st.session_state['init']=True
     db_client = chromadb.PersistentClient(path='chroma_storage')
     collection = db_client.get_collection(name='file1_collection')
     st.session_state['collection']=collection
+    anthropic_client=anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
     st.session_state['anthropic_client']=anthropic_client
     st.session_state['input_usage']=0
     st.session_state['output_usage']=0
@@ -54,6 +52,8 @@ def init():
     st.session_state['chat_history']=[]
     st.session_state['chat_history'].append(Message("Hello, I am an AI assistant. How can I help you today?","ai"))
     
+#--------------------------------------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------------------------------------#
 
 def get_results(query: str) -> List[str]:
     results = st.session_state.collection.query(
@@ -72,7 +72,7 @@ def get_anthropic_response(query: str,context:list) -> str:
     response = st.session_state['anthropic_client'].messages.create(
         # model="claude-3-opus-20240229",
         model='claude-3-haiku-20240307',
-        max_tokens=1000,
+        max_tokens=4000,
         temperature=0.2,
         system=f"""
         I am going to ask you a question, which I would like you to answer"

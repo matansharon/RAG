@@ -18,17 +18,18 @@ def read_and_convert_csv(file_path: str) -> str:
     column_row=df.split("\n")[0]
     #split the string into a list of strings
     rows=df.split("\n")
-    pages=[]
-    page=[]
-    for i in range(1,len(rows),10):
-        page.append(column_row)
-        for j in range(i,i+10):
-            if j<len(rows):
+    # pages=[]
+    # page=[]
+    # for i in range(1,len(rows),10):
+    #     page.append(column_row)
+    #     for j in range(i,i+10):
+    #         if j<len(rows):
             
-                page.append(rows[j])
-        pages.append(page)
-        page=[]
-    return pages
+    #             page.append(rows[j])
+    #     pages.append(page)
+    #     page=[]
+    # return pages
+    return rows
     
 
 def main(documents_directory: str = "documents",collection_name: str = "documents_collection",persist_directory: str = ".",) -> None:
