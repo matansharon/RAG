@@ -134,7 +134,7 @@ def write_side_bar():
                 # st.write(file_name['filename'])
                 st.session_state.existing_files.add(file_name['filename'])
         for file in st.session_state.existing_files:
-            st.write(file)
+            st.markdown(f"- {file}")
         
 #--------------------------------------------------------------------------------------------------------------------------------#
 #--------------------------------------------------------------------------------------------------------------------------------#
