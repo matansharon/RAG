@@ -40,8 +40,8 @@ def init():
     
     
     st.session_state['init']=True
-    db_client = chromadb.PersistentClient(path='chroma_storage')
-    collection = db_client.get_collection(name='file1_collection')
+    db_client = chromadb.PersistentClient(path='chroma_storage_pages')
+    collection = db_client.get_collection(name='by_pages_collection')
     st.session_state['collection']=collection
     anthropic_client=anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
     st.session_state['anthropic_client']=anthropic_client
@@ -120,7 +120,8 @@ def get_anthropic_response(query: str,context:list) -> str:
 #--------------------------------------------------------------------------------------------------------------------------------#
 def write_side_bar():
     with st.sidebar:
-        
+        option = st.selectbox('How would you like to be contacted?',('Email', 'Home phone', 'Mobile phone'))
+        st.write('You selected:', option)
         st.markdown("## Input Usage: ")
         st.write(st.session_state.input_usage)
         st.markdown("## Output Usage: ")
