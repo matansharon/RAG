@@ -110,6 +110,6 @@ if __name__ == "__main__":
     main(
         documents_directory='documents',
         collection_name='by_pages_collection',
-        persist_directory='chroma_storage_pages',
+        persist_directory=' ',
     )
     

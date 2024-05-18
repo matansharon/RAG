@@ -120,7 +120,7 @@ def get_anthropic_response(query: str,context:list) -> str:
 #--------------------------------------------------------------------------------------------------------------------------------#
 def write_side_bar():
     with st.sidebar:
-        option = st.selectbox('How would you like to be contacted?',('Email', 'Home phone', 'Mobile phone'))
+        option = st.selectbox('Choose your model?',('claude-3-haiku', 'claude-3-opus',))
         st.write('You selected:', option)
         st.markdown("## Input Usage: ")
         st.write(st.session_state.input_usage)
