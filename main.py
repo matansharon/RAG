@@ -49,6 +49,8 @@ def init():
     st.session_state['output_usage']=0
     st.session_state['total_usage']=0
     st.session_state['existing_files']=set()
+    for file in st.session_state.collection.get()['metadatas']:
+        st.session_state['existing_files'].add(file['filename'])
     st.session_state['chat_history']=[]
     st.session_state['chat_history'].append(Message("Hello, I am an AI assistant. How can I help you today?","ai"))
     
@@ -57,9 +59,12 @@ def init():
 
 def get_results(query: str) -> List[str]:
     results = st.session_state.collection.query(
-        query_texts=[query], n_results=3, include=["documents", "metadatas","distances"],
+        query_texts=[query], n_results=10, include=["documents", "metadatas","distances"],
     )
-    return results['documents'][0]
+    
+    res=filter_results(results)
+    return res
+    # return results['documents'][0]
 
 #--------------------------------------------------------------------------------------------------------------------------------#
 #--------------------------------------------------------------------------------------------------------------------------------#
@@ -103,14 +108,19 @@ def get_anthropic_response(query: str,context:list) -> str:
         "If there is not enough information in the context to answer the question,"
         'say "I am not sure", then try to make a guess.'
         "Break your answer up into nicely readable paragraphs.
-        here is all the context you have:{context}"
+        here is all the context you have:{context['documents']}"
         """,
         messages=[
             {"role": "user", "content": query}
         ]
     )
+    sources="sources: \n\n"
+    for file in context['metadatas']:
+        sources+=file['filename']+": page number: "+str(file['page_number'])+"\n\n"
     st.session_state['chat_history'].append(Message(query,'user'))
-    st.session_state['chat_history'].append(Message(response.content[0].text,'ai'))
+    st.session_state['chat_history'].append(Message(response.content[0].text+"\n\n"+sources,'ai'))
+    # st.session_state['chat_history'].append(Message(context['metadatas'],'ai'))
+    # st.session_state['chat_history'].append(Message(sources,'ai'))
     
     st.session_state.input_usage+=response.usage.input_tokens
     st.session_state.output_usage+=response.usage.output_tokens
@@ -120,8 +130,9 @@ def get_anthropic_response(query: str,context:list) -> str:
 #--------------------------------------------------------------------------------------------------------------------------------#
 def write_side_bar():
     with st.sidebar:
-        option = st.selectbox('Choose your model?',('claude-3-haiku', 'claude-3-opus',))
-        st.write('You selected:', option)
+        option = st.selectbox('Choose your model?',('claude-3-haiku', 'claude-3-opus'))
+        st.selectbox("Show Existing Files",st.session_state.existing_files)
+        st.write('current model use:', option)
         st.markdown("## Input Usage: ")
         st.write(st.session_state.input_usage)
         st.markdown("## Output Usage: ")
@@ -129,19 +140,21 @@ def write_side_bar():
         st.markdown("## Total Usage: ")
         st.write(st.session_state.total_usage)
         # st.write("## Existing Files: ",st.session_state.collection.get()['metadatas'])
-        for file_name in st.session_state.collection.get()['metadatas']:
-            if file_name['filename'] not in st.session_state.existing_files:
-                # st.write(file_name['filename'])
-                st.session_state.existing_files.add(file_name['filename'])
-        for file in st.session_state.existing_files:
-            st.markdown(f"- {file}")
+        
+        
+        # for file_name in st.session_state.collection.get()['metadatas']:
+        #     if file_name['filename'] not in st.session_state.existing_files:
+        #         # st.write(file_name['filename'])
+        #         st.session_state.existing_files.add(file_name['filename'])
+        # for file in st.session_state.existing_files:
+        #     st.markdown(f"- {file}")
         
 #--------------------------------------------------------------------------------------------------------------------------------#
 #--------------------------------------------------------------------------------------------------------------------------------#
 def display_chat_history():
 
         
-    st.write("number of objects in chat_history: ",len(st.session_state['chat_history']))
+    
     if 'chat_history' in st.session_state:
         
         for i in st.session_state['chat_history']:
