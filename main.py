@@ -53,6 +53,8 @@ def init():
         st.session_state['existing_files'].add(file['filename'])
     st.session_state['chat_history']=[]
     st.session_state['chat_history'].append(Message("Hello, I am an AI assistant. How can I help you today?","ai"))
+    st.session_state['chat_history_in_string']="ai:\n Hello, I am an AI assistant. How can I help you today?\n"
+    
     
 #--------------------------------------------------------------------------------------------------------------------------------#
 #--------------------------------------------------------------------------------------------------------------------------------#
@@ -92,7 +94,7 @@ def filter_results(data):
 #--------------------------------------------------------------------------------------------------------------------------------#
 #--------------------------------------------------------------------------------------------------------------------------------#
 
-def get_anthropic_response(query: str,context:list) -> str:
+def get_response(query: str,context:list) -> str:
     
     
     
@@ -119,8 +121,8 @@ def get_anthropic_response(query: str,context:list) -> str:
         sources+=file['filename']+": page number: "+str(file['page_number'])+"\n\n"
     st.session_state['chat_history'].append(Message(query,'user'))
     st.session_state['chat_history'].append(Message(response.content[0].text+"\n\n"+sources,'ai'))
-    # st.session_state['chat_history'].append(Message(context['metadatas'],'ai'))
-    # st.session_state['chat_history'].append(Message(sources,'ai'))
+    st.session_state['chat_history_in_string']+=f"user:\n {query}\nai:\n {response.content[0].text}\n\n"
+    st.session_state['chat_history_in_string']+=sources+"\n\n"
     
     st.session_state.input_usage+=response.usage.input_tokens
     st.session_state.output_usage+=response.usage.output_tokens
@@ -177,7 +179,7 @@ def main() -> None:
     query=st.chat_input("send a message")
     if query:
         context=get_results(query)
-        get_anthropic_response(query,context)
+        get_response(query,context)
 
     display_chat_history()
     write_side_bar()
