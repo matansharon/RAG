@@ -106,6 +106,7 @@ def get_response(query: str,context:list) -> str:
         temperature=0.2,
         system=f"""
         I am going to ask you a question, which I would like you to answer"
+        this is the chat history so far: {st.session_state['chat_history_in_string']}
         "based only on the provided context, and not any other information."
         "If there is not enough information in the context to answer the question,"
         'say "I am not sure", then try to make a guess.'
@@ -182,6 +183,7 @@ def main() -> None:
         get_response(query,context)
 
     display_chat_history()
+
     write_side_bar()
 #--------------------------------------------------------------------------------------------------------------------------------#
 #--------------------------------------------------------------------------------------------------------------------------------#
