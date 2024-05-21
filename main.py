@@ -108,10 +108,11 @@ def get_response(query: str,context:list) -> str:
         I am going to ask you a question, which I would like you to answer"
         this is the chat history so far: {st.session_state['chat_history_in_string']}
         "based only on the provided context, and not any other information."
-        "If there is not enough information in the context to answer the question,"
-        'say "I am not sure", then try to make a guess.'
         "Break your answer up into nicely readable paragraphs.
         here is all the context you have:{context['documents']}"
+        If there is not enough information in the context to answer the question,
+        try to answer base on your knowledge.
+        but start the answer with : "i dont have enough information to answer this question, but based on my knowledge, here is what I think"
         """,
         messages=[
             {"role": "user", "content": query}
@@ -133,9 +134,10 @@ def get_response(query: str,context:list) -> str:
 #--------------------------------------------------------------------------------------------------------------------------------#
 def write_side_bar():
     with st.sidebar:
-        option = st.selectbox('Choose your model?',('claude-3-haiku', 'claude-3-opus'))
+        option = st.selectbox('Choose your model?',('claude-3-haiku', 'claude-3-opus','gpt-3.5-turbo-0125','gpt-4-turbo-2024-04-09','gpt-4o','gemini-pro'))
         st.selectbox("Show Existing Files",st.session_state.existing_files)
         st.write('current model use:', option)
+        st.file_uploader("Upload Files", type=["pdf","docx","txt",'csv'])
         st.markdown("## Input Usage: ")
         st.write(st.session_state.input_usage)
         st.markdown("## Output Usage: ")
@@ -175,7 +177,7 @@ def display_chat_history():
 def main() -> None:
     if 'init' not in st.session_state:
         init()
-    st.title("Anthropic RAG Chat")
+    st.title("Elcam Medical All AI Chatbot 2.0 🤖")
     
     query=st.chat_input("send a message")
     if query:
