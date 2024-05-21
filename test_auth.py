@@ -1,20 +1,22 @@
+import streamlit as st
 import streamlit_authenticator as stauth
 import os
-import streamlit as st
+
 # hashed_passwords = stauth.Hasher(['abc', 'def']).generate()
 import yaml
 from yaml.loader import SafeLoader
 from streamlit_authenticator import Authenticate
-with open('../config.yaml') as file:
+with open('config.yaml') as file:
     config = yaml.load(file, Loader=SafeLoader)
 authenticator = Authenticate(
     config['credentials'],
     config['cookie']['name'],
     config['cookie']['key'],
     config['cookie']['expiry_days'],
-    config['preauthorized']
+
 )
-name, authentication_status, username = authenticator.login('Login', 'main')
+authenticator.login()
+
 if st.session_state["authentication_status"]:
     authenticator.logout('Logout', 'main')
     st.write(f'Welcome *{st.session_state["name"]}*')
